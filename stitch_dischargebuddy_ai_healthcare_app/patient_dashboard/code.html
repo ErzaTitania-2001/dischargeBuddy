@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>DischargeBuddy</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary": "#ffffff", "surface-tint": "#006a61", "secondary": "#006c49", "surface-container": "#eaedff", "on-surface": "#131b2e", "on-error": "#ffffff", "tertiary": "#b61722", "primary-fixed": "#89f5e7", "primary-fixed-dim": "#6bd8cb", "secondary-container": "#6cf8bb", "on-secondary-container": "#00714d", "surface-variant": "#dae2fd", "inverse-primary": "#6bd8cb", "inverse-surface": "#283044", "surface-dim": "#d2d9f4", "outline": "#6d7a77", "on-surface-variant": "#3d4947", "surface-container-high": "#e2e7ff", "on-secondary-fixed-variant": "#005236", "surface": "#faf8ff", "on-primary-fixed-variant": "#005049", "surface-bright": "#faf8ff", "background": "#faf8ff", "on-tertiary-fixed": "#410004", "primary-container": "#008378", "on-tertiary": "#ffffff", "on-tertiary-fixed-variant": "#930013", "surface-container-lowest": "#ffffff", "on-primary-container": "#f4fffc", "tertiary-fixed": "#ffdad7", "surface-container-low": "#f2f3ff", "surface-container-highest": "#dae2fd", "outline-variant": "#bcc9c6", "inverse-on-surface": "#eef0ff", "on-error-container": "#93000a", "on-background": "#131b2e", "secondary-fixed-dim": "#4edea3", "on-secondary-fixed": "#002113", "on-tertiary-container": "#fffbff", "error-container": "#ffdad6", "tertiary-container": "#da3437", "error": "#ba1a1a", "on-primary-fixed": "#00201d", "on-primary": "#ffffff", "tertiary-fixed-dim": "#ffb3ad", "primary": "#00685f", "secondary-fixed": "#6ffbbe" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter": "1.5rem", "gutter-mobile": "1rem", "space-xs": "0.25rem", "space-md": "1rem", "margin": "2rem", "margin-mobile": "1rem", "space-lg": "1.5rem", "space-sm": "0.5rem", "space-xl": "2.5rem" }, fontFamily: { "headline-md": ["Plus Jakarta Sans"], "body-xl": ["Plus Jakarta Sans"], "label-md": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "headline-xl-mobile": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-sm": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-sm": ["Inter"], "code-verbatim": ["Inter"], "body-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"] }, fontSize: { "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-xl": ["18px", { lineHeight: "28px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }], "headline-xl-mobile": ["30px", { lineHeight: "38px", letterSpacing: "-0.01em", fontWeight: "700" }], "body-md": ["15px", { lineHeight: "24px", fontWeight: "400" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "20px", fontWeight: "400" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "500" }], "code-verbatim": ["13px", { lineHeight: "22px", fontWeight: "400" }], "body-lg": ["16px", { lineHeight: "26px", fontWeight: "400" }], "headline-xl": ["40px", { lineHeight: "52px", letterSpacing: "-0.02em", fontWeight: "700" }] } } } }</script><style>@layer base { html, body { min-height: 100%; margin: 0; padding: 0; background-color: #faf8ff; } .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-28 flex flex-col justify-between"><a class="flex items-center justify-between px-gutter-mobile py-space-xs bg-error-container text-on-error-container text-label-sm font-label-sm transition-colors hover:bg-tertiary-fixed" href="tel:911"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-sm text-error">emergency</span><span>Immediate emergency? Call 911 or visit ER</span></div><span class="material-symbols-outlined text-sm">chevron_right</span></a><div class="flex items-center justify-between px-gutter-mobile pb-space-sm"><div class="flex items-center gap-space-sm"><img alt="DischargeBuddy Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X5O0vouRBC7B1r_wZmMKvYuHCYhlcW7sYX8HiGZV5nIOnGFLGAv4FMTrbnx2hUIzOl_YauOEAlONS9YWaVOUnlPrLyLe0XfbqEv_hmeQh69_uEYrX6uaWDzp6jYkjmi1diJDLQRByTdLtOL0dhHP9o0i92lIZGNx1tQHHphLzkxthf5OG97-BPKfH_CiedNAAylf3n4_7-ZHUWSCpNFGi6PCmUeEA50hLlSFq5qtTOvw"/><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface">DischargeBuddy</span><span class="px-space-xs py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm">AI Companion</span></div><span class="font-label-sm text-label-sm text-on-surface-variant">Dashboard</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Notifications" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors"><span class="material-symbols-outlined">notifications</span></button><button aria-label="Patient profile" class="w-11 h-11 flex items-center justify-center rounded-full ring-2 ring-primary-fixed"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMKH9kDjwsOMgNDOZB6cvBj4gm_X7dGeha8zSJoHU4hcTnqvWCEsrKVC_6rlGCBFNqSAQJhAzTqO77R3KDLfHZFDCtn6lIuN8g3XtYb4oTIiEbNFavsVJ6gZIhpdEaBTqyaly25XEzHvmaoes0cK9v2zxxpn-Lv2ST3OCwbSolObNDTBI8YdQgtxy_YUQqIb0KpK6GggH4ZIzIY8q68yasrbvxbMEoZIh3A3Fkzu6B"/></button></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-28 pb-24 bg-surface max-w-2xl mx-auto px-gutter-mobile"><div class="flex flex-col w-full pb-8 space-y-6">
+<!-- 1. Warm Welcome & Recovery Progress Card -->
+<section class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm">
+<div class="flex items-start justify-between gap-space-md">
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-space-xs mb-1">
+<span class="font-headline-sm text-headline-sm text-on-surface">Welcome back, Sarah</span>
+<span class="text-xl">👋</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-sm">
+          St. Jude Memorial Hospital • Post-Op Knee Arthroscopy
+        </p>
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/30 text-on-secondary-container">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label-md text-label-md">Recovery Day 3 of 14</span>
+</div>
+</div>
+<!-- Radial Progress Graphic (25% Complete) -->
+<div class="relative flex items-center justify-center shrink-0 w-16 h-16">
+<svg class="w-16 h-16 -rotate-90 transform" viewbox="0 0 36 36">
+<path class="text-surface-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="25, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<div class="absolute flex flex-col items-center justify-center">
+<span class="font-headline-sm text-headline-sm text-primary leading-none">25%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">done</span>
+</div>
+</div>
+</div>
+<!-- Reassurance Banner -->
+<div class="mt-space-md p-space-sm rounded-xl bg-surface-container-low flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center shrink-0 text-on-primary-fixed">
+<span class="material-symbols-outlined text-base">task_alt</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">
+<span class="font-semibold text-primary">Your recovery is right on track.</span> You have 2 gentle recovery tasks scheduled for this afternoon.
+      </p>
+</div>
+</section>
+<!-- 2. Hero Interactive Upload Discharge Summary CTA Card -->
+<section class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm relative overflow-hidden">
+<!-- Soft Decorative Gradient Edge -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary-fixed/20 via-transparent to-transparent pointer-events-none"></div>
+<div class="relative z-10 flex flex-col">
+<!-- Section Header -->
+<div class="flex items-start justify-between gap-2 mb-3">
+<div class="flex items-center gap-space-xs">
+<div class="w-9 h-9 rounded-xl bg-primary-fixed flex items-center justify-center text-on-primary-fixed shadow-sm">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface">Upload Discharge Packet</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">AI Engine</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Snap a photo or upload PDF paperwork to translate into clear steps.</p>
+</div>
+</div>
+</div>
+<!-- State Switcher Filter Chips for Demo -->
+<div class="flex items-center gap-1.5 p-1 mb-space-md bg-surface-container-low rounded-xl overflow-x-auto scrollbar-none">
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-label-sm transition-all whitespace-nowrap bg-surface-container-lowest text-primary shadow-sm" id="tab-dropzone" onclick="switchUploadState('dropzone')">
+          Upload Box
+        </button>
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-label-sm transition-all whitespace-nowrap text-on-surface-variant hover:text-on-surface" id="tab-processing" onclick="switchUploadState('processing')">
+          Processing (78%)
+        </button>
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-label-sm transition-all whitespace-nowrap text-on-surface-variant hover:text-on-surface" id="tab-error" onclick="switchUploadState('error')">
+          Blur Warning Alert
+        </button>
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-label-sm transition-all whitespace-nowrap text-on-surface-variant hover:text-on-surface" id="tab-empty" onclick="switchUploadState('empty')">
+          Empty State
+        </button>
+</div>
+<!-- STATE A: Upload Dropzone (Default) -->
+<div class="block" id="state-dropzone">
+<div class="rounded-2xl p-space-lg bg-surface-container-low flex flex-col items-center justify-center text-center transition-all">
+<div class="w-14 h-14 rounded-full bg-primary-fixed-dim/40 flex items-center justify-center text-primary mb-space-sm">
+<span class="material-symbols-outlined text-3xl">cloud_upload</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-1">Drag and drop paperwork</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs mb-space-md">
+            Clinical PDF files, scanned hospital forms, or photos (PNG, JPG up to 25MB).
+          </p>
+<div class="flex flex-col sm:flex-row gap-space-xs w-full max-w-xs">
+<button class="w-full py-2.5 px-space-md rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg">photo_camera</span>
+<span>Take Photo / Scan</span>
+</button>
+<button class="w-full py-2.5 px-space-md rounded-xl bg-surface-container-lowest text-on-surface font-label-lg text-label-lg flex items-center justify-center gap-2 hover:bg-surface-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-lg text-primary">upload_file</span>
+<span>Browse File</span>
+</button>
+</div>
+<div class="mt-3 flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm text-secondary">lock</span>
+<span>256-bit encrypted • HIPAA Compliant</span>
+</div>
+</div>
+</div>
+<!-- STATE B: Processing Indicator (OCR & AI Analysis 78%) -->
+<div class="hidden" id="state-processing">
+<div class="rounded-2xl p-space-lg bg-surface-container-low flex flex-col space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary animate-spin">sync</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Analyzing Document</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary">78%</span>
+</div>
+<!-- Progress Bar Container -->
+<div class="w-full bg-surface-container rounded-full h-2.5 overflow-hidden">
+<div class="bg-primary h-2.5 rounded-full transition-all duration-500" style="width: 78%;"></div>
+</div>
+<!-- Step Progression List -->
+<div class="space-y-2.5 pt-1">
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest text-on-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md text-label-md">1. Optical Character Recognition (OCR)</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-medium">Completed</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest text-on-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-md text-label-md">2. Medical Entity Extraction</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-medium">Completed</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-highest/60 text-on-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg animate-spin">progress_activity</span>
+<span class="font-label-md text-label-md text-primary font-semibold">3. Verbatim Medication Verification</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-medium">In progress...</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-lowest opacity-60 text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-base">radio_button_unchecked</span>
+<span class="font-label-md text-label-md">4. Plain-Language Simplification</span>
+</div>
+<span class="font-label-sm text-label-sm">Queued</span>
+</div>
+</div>
+</div>
+</div>
+<!-- STATE C: Error Alert (Blurry Scan) -->
+<div class="hidden" id="state-error">
+<div class="rounded-2xl p-space-md bg-error-container text-on-error-container flex flex-col space-y-3">
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-error text-2xl shrink-0 mt-0.5">error</span>
+<div class="flex-1">
+<h5 class="font-headline-sm text-headline-sm text-on-error-container mb-1">Blurry Scan Detected</h5>
+<p class="font-body-sm text-body-sm leading-relaxed mb-2">
+                Our clinical AI was unable to verify the physician signature and dosage lines on page 2. For patient safety, unclear instructions cannot be processed automatically.
+              </p>
+<div class="p-2.5 rounded-lg bg-surface-container-lowest/80 text-on-surface font-body-sm text-body-sm mb-3">
+<strong class="text-error font-semibold">Recommendation:</strong> Re-take photo in bright, glare-free light with the sheet flat.
+              </div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-md py-2 bg-error text-on-error rounded-xl font-label-md text-label-md hover:opacity-90 transition-opacity">
+                  Retake Photo
+                </button>
+<button class="px-space-md py-2 bg-surface-container-lowest text-on-surface rounded-xl font-label-md text-label-md hover:bg-surface-container" onclick="switchUploadState('dropzone')">
+                  Cancel
+                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- STATE D: Empty State Preview -->
+<div class="hidden" id="state-empty">
+<div class="rounded-2xl p-space-lg bg-surface-container-low text-center flex flex-col items-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant mb-2">
+<span class="material-symbols-outlined text-2xl">description</span>
+</div>
+<h5 class="font-headline-sm text-headline-sm text-on-surface">No documents being processed</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-xs mt-1 mb-3">
+            You currently have no incoming files in the translation queue.
+          </p>
+<button class="text-primary font-label-md text-label-md flex items-center gap-1 hover:underline" onclick="switchUploadState('dropzone')">
+<span>Open uploader</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Recent Discharge Documents Section -->
+<section class="space-y-3">
+<div class="flex items-center justify-between px-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Recent Discharge Documents</h3>
+<span class="font-label-sm text-label-sm text-primary font-semibold cursor-pointer">View History</span>
+</div>
+<!-- Active Document Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col space-y-3">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-12 h-12 rounded-xl bg-primary-fixed-dim/30 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">picture_as_pdf</span>
+</div>
+<div class="min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface truncate">Knee Arthroscopy Discharge Packet</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">St. Jude Hospital • Oct 24, 2024 • 6 Pages</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container font-label-sm text-label-sm flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">check</span>
+          Verified
+        </span>
+</div>
+<!-- Quick AI Preview pill -->
+<div class="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-primary text-base shrink-0">summarize</span>
+<p class="font-body-sm text-body-sm text-on-surface truncate">
+            Weight-bearing as tolerated with crutches; Ice 20m q2h.
+          </p>
+</div>
+<a class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md shrink-0 flex items-center gap-1 hover:bg-primary-container transition-colors shadow-sm" href="#">
+<span>View Summary</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Archived Document Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-center justify-between gap-space-sm opacity-75">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-xl">history_edu</span>
+</div>
+<div class="min-w-0">
+<h4 class="font-label-lg text-label-lg text-on-surface truncate">Pre-Op General Instructions</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Oct 18, 2024 • PDF</p>
+</div>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm shrink-0">
+        Archived
+      </span>
+</div>
+</section>
+<!-- 4. Upcoming Follow-Up Care -->
+<section class="space-y-3">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Upcoming Follow-Up Care</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">2 Scheduled</span>
+</div>
+<!-- Appointment Card: Dr Robert Chen -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm space-y-3">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<img class="w-12 h-12 rounded-xl object-cover shrink-0" data-alt="Portrait of Dr Robert Chen, Asian male orthopedic surgeon in hospital scrubs and white coat with a friendly comforting smile, clean medical clinic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTKegQNUKvGzBnVfhIU55LF4FHtsHSQF_4wUW4D6tOpTyTpitxHLFjdCgUUiLeb8jhe1a7xLUkfTjnVBazgRwctoCsYt1isYJrnLzXIPfEQCKaj3MnpSFiHlVo1dfn5P4_PBTE3u6cd8A0Z9p6MXH6blMNIdTVtr87H2Z2tn3shL2CcdB7rascLKr-48URfSQaEK0buOdN9AXCffl8FHqzovc--b4pGYtTUypc6ntI"/>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Dr. Robert Chen</h4>
+<p class="font-label-md text-label-md text-primary">Orthopedic Surgery • Suture Inspection</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+          In 4 days
+        </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-body-sm text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">schedule</span>
+<span>Thursday, Oct 31 • 10:30 AM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">location_on</span>
+<span>Pavilion B, Suite 402</span>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-1">
+<button class="flex-1 py-2 px-3 rounded-xl bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-base">event</span>
+<span>Add to Calendar</span>
+</button>
+<a class="flex-1 py-2 px-3 rounded-xl bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" href="tel:5550192834">
+<span class="material-symbols-outlined text-base text-primary">call</span>
+<span>Call Clinic</span>
+</a>
+</div>
+</div>
+<!-- Appointment Card: PT -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-12 h-12 rounded-xl bg-secondary-container/30 text-on-secondary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">accessibility_new</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Physical Therapy Consultation</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Monday, Nov 4 • 2:00 PM (Sports Rehab Center)</p>
+</div>
+</div>
+<button class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- 5. Quick Vitals & Mood Check-in Widget -->
+<section class="bg-surface-container-lowest rounded-2xl p-space-lg shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary-container">favorite</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Daily Pain &amp; Comfort Check-in</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Self-Report</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+      How is your pain level right now? Scale 1 (Minimal) to 10 (Severe).
+    </p>
+<!-- Interactive Scale Selector -->
+<div class="flex items-center justify-between gap-1 pt-2">
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(1, 'Mild ache expected after arthroscopy')">1</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(2, 'Very manageable comfort')">2</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center shadow-sm" onclick="selectPain(3, 'Moderate discomfort, take meds as prescribed')">3</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(4, 'Noticeable discomfort, remember to elevate')">4</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(5, 'Elevate leg, apply ice pack for 20m')">5</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(6, 'Consider taking prescribed pain reliever')">6</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(7, 'Substantial pain, rest with leg elevated')">7</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(8, 'Notify care team if pain meds do not help')">8</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(9, 'Severe pain. Contact St. Jude triage')">9</button>
+<button class="pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors" onclick="selectPain(10, 'Unbearable pain. Please seek immediate attention')">10</button>
+</div>
+<!-- Guidance message based on selection -->
+<div class="mt-2 p-3 rounded-xl bg-secondary-container/20 text-on-secondary-container flex items-center gap-2" id="pain-guidance">
+<span class="material-symbols-outlined text-lg shrink-0">info</span>
+<span class="font-body-sm text-body-sm" id="pain-text">Score 3: Moderate discomfort. Keep leg elevated above heart level and apply cold pack.</span>
+</div>
+</section>
+</div>
+<script>
+  function switchUploadState(state) {
+    const states = ['dropzone', 'processing', 'error', 'empty'];
+    states.forEach(s => {
+      const el = document.getElementById('state-' + s);
+      const tab = document.getElementById('tab-' + s);
+      if (s === state) {
+        el.classList.remove('hidden');
+        el.classList.add('block');
+        tab.className = 'px-3 py-1.5 rounded-lg text-label-sm font-label-sm transition-all whitespace-nowrap bg-surface-container-lowest text-primary shadow-sm';
+      } else {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+        tab.className = 'px-3 py-1.5 rounded-lg text-label-sm font-label-sm transition-all whitespace-nowrap text-on-surface-variant hover:text-on-surface';
+      }
+    });
+  }
+
+  function selectPain(score, note) {
+    const btns = document.querySelectorAll('.pain-btn');
+    btns.forEach((b, idx) => {
+      if (idx + 1 === score) {
+        b.className = 'pain-btn w-8 h-10 rounded-xl bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center shadow-sm';
+      } else {
+        b.className = 'pain-btn w-8 h-10 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center hover:bg-primary-fixed transition-colors';
+      }
+    });
+    const textEl = document.getElementById('pain-text');
+    if (textEl) {
+      textEl.innerText = 'Score ' + score + ': ' + note;
+    }
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-label-lg"><div class="flex justify-around items-center h-16 max-w-2xl mx-auto px-space-sm"><a aria-current="page" class="flex flex-col items-center justify-center w-20 h-full transition-colors text-primary font-label-lg" data-path="dashboard" href="#"><span class="material-symbols-outlined text-2xl">dashboard</span><span class="font-label-sm text-label-sm">Dashboard</span></a><a class="flex flex-col items-center justify-center w-20 h-full text-on-surface-variant transition-colors hover:text-on-surface" data-path="summary-&amp;-rx" href="#"><span class="material-symbols-outlined text-2xl">description</span><span class="font-label-sm text-label-sm">Summary &amp; Rx</span></a><a class="flex flex-col items-center justify-center w-20 h-full text-on-surface-variant transition-colors hover:text-on-surface" data-path="checklist" href="#"><span class="material-symbols-outlined text-2xl">check_circle</span><span class="font-label-sm text-label-sm">Checklist</span></a></div></nav></body></html>

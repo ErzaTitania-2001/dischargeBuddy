@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><title>DischargeBuddy</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-secondary": "#ffffff", "surface-tint": "#006a61", "secondary": "#006c49", "surface-container": "#eaedff", "on-surface": "#131b2e", "on-error": "#ffffff", "tertiary": "#b61722", "primary-fixed": "#89f5e7", "primary-fixed-dim": "#6bd8cb", "secondary-container": "#6cf8bb", "on-secondary-container": "#00714d", "surface-variant": "#dae2fd", "inverse-primary": "#6bd8cb", "inverse-surface": "#283044", "surface-dim": "#d2d9f4", "outline": "#6d7a77", "on-surface-variant": "#3d4947", "surface-container-high": "#e2e7ff", "on-secondary-fixed-variant": "#005236", "surface": "#faf8ff", "on-primary-fixed-variant": "#005049", "surface-bright": "#faf8ff", "background": "#faf8ff", "on-tertiary-fixed": "#410004", "primary-container": "#008378", "on-tertiary": "#ffffff", "on-tertiary-fixed-variant": "#930013", "surface-container-lowest": "#ffffff", "on-primary-container": "#f4fffc", "tertiary-fixed": "#ffdad7", "surface-container-low": "#f2f3ff", "surface-container-highest": "#dae2fd", "outline-variant": "#bcc9c6", "inverse-on-surface": "#eef0ff", "on-error-container": "#93000a", "on-background": "#131b2e", "secondary-fixed-dim": "#4edea3", "on-secondary-fixed": "#002113", "on-tertiary-container": "#fffbff", "error-container": "#ffdad6", "tertiary-container": "#da3437", "error": "#ba1a1a", "on-primary-fixed": "#00201d", "on-primary": "#ffffff", "tertiary-fixed-dim": "#ffb3ad", "primary": "#00685f", "secondary-fixed": "#6ffbbe" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "gutter": "1.5rem", "gutter-mobile": "1rem", "space-xs": "0.25rem", "space-md": "1rem", "margin": "2rem", "margin-mobile": "1rem", "space-lg": "1.5rem", "space-sm": "0.5rem", "space-xl": "2.5rem" }, fontFamily: { "headline-md": ["Plus Jakarta Sans"], "body-xl": ["Plus Jakarta Sans"], "label-md": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "headline-xl-mobile": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-sm": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "label-sm": ["Inter"], "code-verbatim": ["Inter"], "body-lg": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"] }, fontSize: { "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-xl": ["18px", { lineHeight: "28px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "600" }], "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.015em", fontWeight: "600" }], "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }], "headline-xl-mobile": ["30px", { lineHeight: "38px", letterSpacing: "-0.01em", fontWeight: "700" }], "body-md": ["15px", { lineHeight: "24px", fontWeight: "400" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "20px", fontWeight: "400" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "500" }], "code-verbatim": ["13px", { lineHeight: "22px", fontWeight: "400" }], "body-lg": ["16px", { lineHeight: "26px", fontWeight: "400" }], "headline-xl": ["40px", { lineHeight: "52px", letterSpacing: "-0.02em", fontWeight: "700" }] } } } }</script><style>@layer base { html, body { min-height: 100%; margin: 0; padding: 0; background-color: #faf8ff; } .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-28 flex flex-col justify-between"><a class="flex items-center justify-between px-gutter-mobile py-space-xs bg-error-container text-on-error-container text-label-sm font-label-sm transition-colors hover:bg-tertiary-fixed" href="tel:911"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-sm text-error">emergency</span><span>Immediate emergency? Call 911 or visit ER</span></div><span class="material-symbols-outlined text-sm">chevron_right</span></a><div class="flex items-center justify-between px-gutter-mobile pb-space-sm"><div class="flex items-center gap-space-sm"><img alt="DischargeBuddy Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X5O0vouRBC7B1r_wZmMKvYuHCYhlcW7sYX8HiGZV5nIOnGFLGAv4FMTrbnx2hUIzOl_YauOEAlONS9YWaVOUnlPrLyLe0XfbqEv_hmeQh69_uEYrX6uaWDzp6jYkjmi1diJDLQRByTdLtOL0dhHP9o0i92lIZGNx1tQHHphLzkxthf5OG97-BPKfH_CiedNAAylf3n4_7-ZHUWSCpNFGi6PCmUeEA50hLlSFq5qtTOvw"/><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface">DischargeBuddy</span><span class="px-space-xs py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm">AI Companion</span></div><span class="font-label-sm text-label-sm text-on-surface-variant">Checklist</span></div></div><div class="flex items-center gap-space-xs"><button aria-label="Notifications" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors"><span class="material-symbols-outlined">notifications</span></button><button aria-label="Patient profile" class="w-11 h-11 flex items-center justify-center rounded-full ring-2 ring-primary-fixed"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMKH9kDjwsOMgNDOZB6cvBj4gm_X7dGeha8zSJoHU4hcTnqvWCEsrKVC_6rlGCBFNqSAQJhAzTqO77R3KDLfHZFDCtn6lIuN8g3XtYb4oTIiEbNFavsVJ6gZIhpdEaBTqyaly25XEzHvmaoes0cK9v2zxxpn-Lv2ST3OCwbSolObNDTBI8YdQgtxy_YUQqIb0KpK6GggH4ZIzIY8q68yasrbvxbMEoZIh3A3Fkzu6B"/></button></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-28 pb-24 bg-surface max-w-2xl mx-auto px-gutter-mobile"><div class="flex flex-col w-full pb-10">
+<!-- TOP CONTEXT & LANGUAGE SELECTOR BAR -->
+<div class="flex flex-col gap-space-sm mb-space-md">
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-surface-tint tracking-wide uppercase">Patient: Sarah Jenkins • Knee Arthroscopy</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Recovery Action Checklist</h1>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed shadow-sm">
+<span class="material-symbols-outlined text-xl">fact_check</span>
+</div>
+</div>
+<!-- Multi-Language Pill Switcher -->
+<div class="bg-surface-container-high p-1 rounded-full flex items-center justify-between shadow-inner">
+<button class="flex-1 py-1.5 px-space-xs rounded-full text-center font-label-md text-label-md transition-all duration-200 bg-surface-container-lowest text-primary shadow-sm font-semibold flex items-center justify-center gap-1" id="lang-en" onclick="setLanguage('en')">
+<span>English</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</button>
+<button class="flex-1 py-1.5 px-space-xs rounded-full text-center font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1" id="lang-hi" onclick="setLanguage('hi')">
+<span>हिन्दी</span>
+<span class="text-[10px] text-surface-tint opacity-75">Hindi</span>
+</button>
+<button class="flex-1 py-1.5 px-space-xs rounded-full text-center font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1" id="lang-bn" onclick="setLanguage('bn')">
+<span>বাংলা</span>
+<span class="text-[10px] text-surface-tint opacity-75">Bengali</span>
+</button>
+</div>
+<!-- Caregiver Multilingual Reassurance Banner -->
+<div class="hidden bg-secondary-container/30 px-space-md py-space-xs rounded-xl flex items-center gap-space-sm" id="lang-banner">
+<span class="material-symbols-outlined text-secondary text-lg">translate</span>
+<p class="font-body-sm text-body-sm text-on-surface flex-1" id="lang-banner-text">
+<!-- Dynamically injected translated reassurance -->
+</p>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">Active</span>
+</div>
+</div>
+<!-- EVALUATOR DEMO CONTROLS (TABS/CHIPS) -->
+<div class="mb-space-md flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-primary">science</span>
+        Interactive Demo State Switcher:
+      </span>
+<span class="font-label-sm text-label-sm text-secondary font-semibold">Tap to test flows</span>
+</div>
+<div class="flex gap-space-xs overflow-x-auto pb-1 scrollbar-none">
+<button class="state-chip shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm bg-primary text-on-primary shadow-sm flex items-center gap-1" id="chip-active" onclick="setDemoState('active')">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>Day 3 (In Progress)</span>
+</button>
+<button class="state-chip shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1" id="chip-complete" onclick="setDemoState('complete')">
+<span class="material-symbols-outlined text-sm">task_alt</span>
+<span>100% Complete</span>
+</button>
+<button class="state-chip shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1" id="chip-empty" onclick="setDemoState('empty')">
+<span class="material-symbols-outlined text-sm">inventory_2</span>
+<span>Empty State</span>
+</button>
+<button class="state-chip shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1" id="chip-ocr" onclick="setDemoState('ocr')">
+<span class="material-symbols-outlined text-sm">document_scanner</span>
+<span>Processing OCR</span>
+</button>
+</div>
+</div>
+<!-- MAIN DYNAMIC CONTENT CONTAINER -->
+<div class="flex flex-col gap-space-md" id="checklist-view">
+<!-- DAILY PROGRESS CARD -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm relative overflow-hidden">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-sm text-label-sm text-surface-tint font-semibold uppercase tracking-wider">Today's Adherence</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mt-0.5" id="progress-text">Day 3: 3 of 6 tasks completed</h2>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-headline-md text-headline-md text-secondary" id="progress-percentage-label">50%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">On Track</span>
+</div>
+</div>
+<!-- Mint Progress Track -->
+<div class="w-full bg-surface-container-high h-2.5 rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container bg-opacity-90 rounded-full transition-all duration-500 ease-out" id="progress-bar-fill" style="width: 50%; background-color: #10B981;"></div>
+</div>
+<div class="flex items-center gap-space-xs bg-secondary-container/20 rounded-lg px-space-sm py-space-xs">
+<span class="material-symbols-outlined text-secondary text-base">verified</span>
+<p class="font-body-sm text-body-sm text-on-surface">
+<strong class="font-semibold text-secondary">Keep it up!</strong> Staying consistent reduces hospital readmission risk by <span class="font-semibold text-secondary">64%</span>.
+        </p>
+</div>
+</div>
+<!-- CELEBRATION BANNER (Hidden by default, shows on 100% complete) -->
+<div class="hidden bg-secondary-container/40 rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm" id="celebration-card">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-md shrink-0">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary font-semibold uppercase">Daily Goal Achieved!</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">All 6 tasks finished for Day 3</h3>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Fantastic recovery discipline, Sarah! Rest up, maintain leg elevation, and keep hydration steady through the evening.
+      </p>
+</div>
+<!-- SECTION A: MORNING ROUTINE -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-lg">wb_sunny</span>
+<h3 class="font-label-lg text-label-lg text-on-surface" id="label-morning-section">Morning Routine (Completed)</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary font-label-sm text-label-sm">3 / 3 Done</span>
+</div>
+<!-- Item 1: Cephalexin Morning -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-space-md transition-all">
+<button class="mt-0.5 w-6 h-6 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-95" onclick="toggleTask(this, 'm1')">
+<span class="material-symbols-outlined text-base">check</span>
+</button>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-space-xs">
+<span class="font-body-md text-body-md font-semibold text-on-surface-variant line-through task-title" data-bn="সেফালেক্সিন ৫০০মিগ্রা খান" data-en="Take Cephalexin 500mg" data-hi="सेफालेक्सिन 500mg लें">Take Cephalexin 500mg</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">8:00 AM</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant task-desc" data-bn="অ্যান্টিবায়োটিক • সকাল ৮:১২ মিনিটে নাস্তার সাথে গৃহীত।" data-en="Antibiotic • Completed at 8:12 AM with oatmeal breakfast." data-hi="एंटीबायोटिक • सुबह 8:12 बजे नाश्ते के साथ लिया गया।">Antibiotic • Completed at 8:12 AM with oatmeal breakfast.</span>
+</div>
+</div>
+<!-- Item 2: SubQ Injection -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-space-md transition-all">
+<button class="mt-0.5 w-6 h-6 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-95" onclick="toggleTask(this, 'm2')">
+<span class="material-symbols-outlined text-base">check</span>
+</button>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-space-xs">
+<span class="font-body-md text-body-md font-semibold text-on-surface-variant line-through task-title" data-bn="এনোক্সাপারিন ৪০মিগ্রা ইনজেকশন নিন" data-en="Administer Enoxaparin 40mg SubQ" data-hi="एनोक्सापेरिन 40mg सुई लगाएं">Administer Enoxaparin 40mg SubQ</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">9:00 AM</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant task-desc" data-bn="রক্ত জমাট বাঁধা প্রতিরোধ • সকাল ৯:০৫ মিনিটে পেটের ডান পাশে সম্পন্ন।" data-en="Blood clot prevention • Completed at 9:05 AM (Right abdomen site)." data-hi="रक्त के थक्कों की रोकथाम • सुबह 9:05 बजे पेट की दाईं ओर लिया गया।">Blood clot prevention • Completed at 9:05 AM (Right abdomen site).</span>
+</div>
+</div>
+<!-- Item 3: Cryo Knee Elevation -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-space-md transition-all">
+<button class="mt-0.5 w-6 h-6 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-95" onclick="toggleTask(this, 'm3')">
+<span class="material-symbols-outlined text-base">check</span>
+</button>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-space-xs">
+<span class="font-body-md text-body-md font-semibold text-on-surface-variant line-through task-title" data-bn="হাঁটুতে বরফ দিন ও উঁচুতে রাখুন (২০ মিনিট)" data-en="Ice &amp; Elevate Knee (20 Mins)" data-hi="घुटने पर बर्फ लगाएं और ऊंचा रखें (20 मिनट)">Ice &amp; Elevate Knee (20 Mins)</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">10:00 AM</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant task-desc" data-bn="ডান হাঁটুতে কোল্ড থেরাপি • সকাল ১০:০০ টায় সম্পন্ন।" data-en="Cold therapy wrap on right knee • Done at 10:00 AM." data-hi="दाहिने घुटने पर कोल्ड पैक • सुबह 10:00 बजे पूरा हुआ।">Cold therapy wrap on right knee • Done at 10:00 AM.</span>
+</div>
+</div>
+</div>
+<!-- SECTION B: AFTERNOON & EVENING (PENDING) -->
+<div class="flex flex-col gap-space-xs mt-space-sm">
+<div class="flex items-center justify-between px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-lg">wb_twilight</span>
+<h3 class="font-label-lg text-label-lg text-on-surface" id="label-pending-section">Afternoon &amp; Evening (Pending)</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm" id="pending-counter-badge">3 Pending</span>
+</div>
+<!-- Item 4: Afternoon Cephalexin (Urgent/Due Soon) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-space-md transition-all" id="task-card-4">
+<button class="mt-0.5 w-6 h-6 rounded-md bg-surface-container-high hover:bg-surface-container text-transparent flex items-center justify-center shrink-0 transition-transform active:scale-95" onclick="togglePendingTask(this, 4)">
+<span class="material-symbols-outlined text-base">check</span>
+</button>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-space-xs">
+<span class="font-body-md text-body-md font-semibold text-on-surface task-title" data-bn="সেফালেক্সিন ৫০০মিগ্রা খান" data-en="Take Cephalexin 500mg" data-hi="सेफालेक्सिन 500mg लें">Take Cephalexin 500mg</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold shrink-0">Due in 45m</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant task-desc" data-bn="দিনের দ্বিতীয় অ্যান্টিবায়োটিক ডোজ। এক গ্লাস জল বা হালকা খাবারের সাথে খান।" data-en="Second daily antibiotic dose. Take with full glass of water or light snack." data-hi="दिन की दूसरी एंटीबायोटिक खुराक। एक गिलास पानी या हल्के नाश्ते के साथ लें।">Second daily antibiotic dose. Take with full glass of water or light snack.</span>
+<!-- Quick Action Button -->
+<div class="mt-space-xs flex items-center gap-space-xs">
+<button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm flex items-center gap-1" onclick="snoozeAlert(this)">
+<span class="material-symbols-outlined text-sm">alarm</span>
+<span>15m Reminder</span>
+</button>
+<span class="font-label-sm text-label-sm text-surface-tint">Rx #440219</span>
+</div>
+</div>
+</div>
+<!-- Item 5: Ankle Pump Exercises with Video Modal Link -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-space-md transition-all" id="task-card-5">
+<button class="mt-0.5 w-6 h-6 rounded-md bg-surface-container-high hover:bg-surface-container text-transparent flex items-center justify-center shrink-0 transition-transform active:scale-95" onclick="togglePendingTask(this, 5)">
+<span class="material-symbols-outlined text-base">check</span>
+</button>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-space-xs">
+<span class="font-body-md text-body-md font-semibold text-on-surface task-title" data-bn="গোড়ালির ব্যায়াম (৩ সেট x ১০)" data-en="Ankle Pump Exercises (3 sets x 10)" data-hi="टखने के व्यायाम (3 सेट x 10)">Ankle Pump Exercises (3 sets x 10)</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">4:00 PM</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant task-desc" data-bn="পায়ের পাতা রিদমিকভাবে উপরে-নিচে করুন। রক্ত জমাট বাঁধা রোধ করে।" data-en="Point toes up and down rhythmically. Prevents DVT / deep vein thrombosis." data-hi="पैरों की उंगलियों को ऊपर-नीचे हिलाएं। नसों में थक्के बनने से रोकता है।">Point toes up and down rhythmically. Prevents DVT / deep vein thrombosis.</span>
+<!-- Clinical note & Micro-Video link -->
+<div class="mt-space-xs flex items-center gap-space-xs flex-wrap">
+<button class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm flex items-center gap-1 hover:bg-primary-fixed-dim transition-colors" onclick="openExerciseVideoModal()">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+<span data-bn="৩০ সেকেন্ডের গাইড দেখুন" data-en="Watch 30s Guide" data-hi="30 सेकंड गाइड देखें">Watch 30s Guide</span>
+</button>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Physical Therapy</span>
+</div>
+</div>
+</div>
+<!-- Item 6: Wound Dressing Inspection -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-start gap-space-md transition-all" id="task-card-6">
+<button class="mt-0.5 w-6 h-6 rounded-md bg-surface-container-high hover:bg-surface-container text-transparent flex items-center justify-center shrink-0 transition-transform active:scale-95" onclick="togglePendingTask(this, 6)">
+<span class="material-symbols-outlined text-base">check</span>
+</button>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-space-xs">
+<span class="font-body-md text-body-md font-semibold text-on-surface task-title" data-bn="সন্ধ্যার ক্ষতের ড্রেসিং পরীক্ষা" data-en="Evening Wound Dressing Inspection" data-hi="शाम को पट्टी की जांच करें">Evening Wound Dressing Inspection</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant shrink-0">7:30 PM</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant task-desc" data-bn="ক্লিনিক্যাল নির্দেশ: ওয়াটারপ্রুফ ড্রেসিং খুলবেন না। অতিরিক্ত তরল বা লালচে ভাব দেখুন।" data-en="Clinical Note: Do NOT remove clear waterproof dressing. Check for excess fluid or redness." data-hi="चिकित्सीय सलाह: वाटरप्रूफ पट्टी न हटाएं। केवल रिसाव या लाली की जांच करें।">Clinical Note: Do NOT remove clear waterproof dressing. Check for excess fluid or redness.</span>
+<div class="mt-space-xs flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container/30 text-secondary font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">shield</span>
+              Keep dry
+            </span>
+</div>
+</div>
+</div>
+</div>
+<!-- RECOVERY TIP SPLIT CARD (Visual Delight Anchor) -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm flex items-start gap-space-md">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-xl">self_improvement</span>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="font-label-sm text-label-sm text-primary font-semibold uppercase">Daily Recovery Milestone</span>
+<h4 class="font-body-md text-body-md font-semibold text-on-surface">Ice elevation eases 80% of Day 3 swelling</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Pillows under your calf—not directly beneath the knee joint—encourage natural knee straightening while resting.
+        </p>
+</div>
+</div>
+</div>
+<!-- EMPTY STATE DEMO (Controlled via chip) -->
+<div class="hidden flex flex-col items-center text-center p-space-lg bg-surface-container-lowest rounded-xl shadow-sm gap-space-md" id="empty-state-view">
+<div class="w-20 h-20 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-4xl">note_add</span>
+</div>
+<div class="flex flex-col gap-1 max-w-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">No Active Recovery Schedule</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        You don't have an active checklist yet. Snap a picture of your paper hospital discharge packet, and our AI companion will generate your schedule.
+      </p>
+</div>
+<!-- Upload Dropzone Target -->
+<div class="w-full p-space-lg rounded-xl bg-surface-container-low flex flex-col items-center justify-center gap-space-xs cursor-pointer hover:bg-surface-container transition-colors" onclick="simulateUpload()">
+<div class="w-12 h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">document_scanner</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Upload Paper Discharge Packet</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">PDF, JPG, or PNG up to 25MB • HIPAA Compliant</span>
+</div>
+</div>
+<!-- PROCESSING OCR STATE DEMO (Controlled via chip) -->
+<div class="hidden flex flex-col p-space-lg bg-surface-container-lowest rounded-xl shadow-sm gap-space-md" id="ocr-state-view">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center animate-spin">
+<span class="material-symbols-outlined text-2xl">autorenew</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary font-semibold uppercase">AI Processing Engine</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Analyzing Discharge Summary</h3>
+</div>
+</div>
+<!-- Step pipeline -->
+<div class="flex flex-col gap-space-sm pl-2">
+<div class="flex items-center gap-space-sm text-secondary font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+<span>Paper document extracted (3 pages)</span>
+</div>
+<div class="flex items-center gap-space-sm text-secondary font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+<span>Medication table identified (Cephalexin, Enoxaparin)</span>
+</div>
+<div class="flex items-center gap-space-sm text-primary font-body-sm text-body-sm font-semibold">
+<span class="material-symbols-outlined text-lg animate-pulse">pending</span>
+<span>Translating clinical orders into patient checklist...</span>
+</div>
+<div class="flex items-center gap-space-sm text-on-surface-variant opacity-60 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-lg">radio_button_unchecked</span>
+<span>Finalizing multi-language translations</span>
+</div>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full animate-pulse" style="width: 72%;"></div>
+</div>
+</div>
+<!-- CAREGIVER SHARING & EXPORT ACTIONS -->
+<div class="mt-space-lg flex flex-col gap-space-xs">
+<div class="flex items-center justify-between px-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Caregiver &amp; Offline Tools</span>
+</div>
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Family / Caregiver Share Button -->
+<button class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:bg-surface-container-low transition-all flex flex-col items-start gap-space-xs text-left group" onclick="shareWithFamily()">
+<div class="w-9 h-9 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center transition-transform group-hover:scale-105">
+<span class="material-symbols-outlined text-lg">share</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold block">Share Plan</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Send read-only access to caregiver</span>
+</div>
+</button>
+<!-- Printable Refrigerator PDF -->
+<button class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:bg-surface-container-low transition-all flex flex-col items-start gap-space-xs text-left group" onclick="downloadFridgeSheet()">
+<div class="w-9 h-9 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center transition-transform group-hover:scale-105">
+<span class="material-symbols-outlined text-lg">print</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold block">Printable Sheet</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Fridge magnet PDF checklist</span>
+</div>
+</button>
+</div>
+</div>
+<!-- EMERGENCY CARE TEAM CONTACT FOOTER -->
+<div class="mt-space-md bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-xl">phone_in_talk</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Orthopedic Care Team</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface">Dr. Aris Thorne (On-Call)</span>
+</div>
+</div>
+<a class="px-space-md py-2 rounded-full bg-surface-container-high hover:bg-surface-container text-primary font-label-md text-label-md font-semibold flex items-center gap-1 transition-colors" href="tel:5550192834">
+<span>Call Office</span>
+<span class="material-symbols-outlined text-base">call</span>
+</a>
+</div>
+<!-- EXERCISE VIDEO MODAL (Delight feature for Knee recovery) -->
+<div class="fixed inset-0 z-50 bg-inverse-surface/60 backdrop-blur-sm hidden flex items-center justify-center p-gutter-mobile" id="video-modal">
+<div class="bg-surface-container-lowest rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+<div class="p-space-md flex items-center justify-between bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">fitness_center</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Ankle Pump Routine</h4>
+</div>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container" onclick="closeExerciseVideoModal()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="relative w-full h-48 bg-inverse-surface flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A physical therapy clinical demonstration of a patient gently flexing and pumping their ankle while comfortably lying down with knee elevated on white soft pillows in a bright recovery room." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRFhcpd6zF8DA29YLDiN7gt0pbyKzMp5GJQ6oZMlNa9qlP0Lu2whGPTy6N7VIGOYH4lnhpKp6PZvl3XxQ_0pLpQLqpr2wpRlpvtLiTRKYRfrLYAyE3Lfx86o2PNm0C_2Y4kcIfpC0WeLUIJsluQHoufQwvBwHyS3BvDwIMXZYrCTvyqi-K9TI8ORc-x2-ArsOI95C1m-YnONf5MuoF-whDlhb1QFGax9LXF4GqYf3U"/>
+<div class="absolute inset-0 bg-inverse-surface/30 flex items-center justify-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest/90 text-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+<div class="p-space-md flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm text-secondary font-semibold uppercase">30-Second Clinical Guidance</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Slowly point your foot down toward the floor, then pull toes upward toward your shin. Hold each direction for 2 seconds. Repeat 10 times.
+        </p>
+<button class="mt-2 w-full py-2.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold text-center hover:bg-surface-tint transition-colors" onclick="closeExerciseVideoModal()">
+          Got it, Close Guide
+        </button>
+</div>
+</div>
+</div>
+<!-- TOAST NOTIFICATION CONTAINER -->
+<div class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-full shadow-lg font-label-md text-label-md flex items-center gap-2 opacity-0 pointer-events-none transition-opacity duration-300" id="toast-msg">
+<span class="material-symbols-outlined text-primary-fixed text-base" id="toast-icon">check_circle</span>
+<span id="toast-text">Checklist updated</span>
+</div>
+</div>
+<script>
+  // State tracking
+  let currentLang = 'en';
+  let completedCount = 3;
+  const totalTasks = 6;
+  const taskStates = { 4: false, 5: false, 6: false };
+
+  const langBanners = {
+    hi: 'हिन्दी अनुवाद सक्रिय: आपके परिवार और देखभालकर्ता आसानी से सभी निर्देश समझ सकते हैं।',
+    bn: 'বাংলা অনুবাদ সক্রিয়: আপনার পরিবার এবং যত্নকারী সহজেই সব নির্দেশাবলী বুঝতে পারবেন।'
+  };
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    ['en', 'hi', 'bn'].forEach(l => {
+      const btn = document.getElementById(`lang-${l}`);
+      if (l === lang) {
+        btn.className = "flex-1 py-1.5 px-space-xs rounded-full text-center font-label-md text-label-md transition-all duration-200 bg-surface-container-lowest text-primary shadow-sm font-semibold flex items-center justify-center gap-1";
+      } else {
+        btn.className = "flex-1 py-1.5 px-space-xs rounded-full text-center font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-1";
+      }
+    });
+
+    const banner = document.getElementById('lang-banner');
+    const bannerText = document.getElementById('lang-banner-text');
+
+    if (lang === 'en') {
+      banner.classList.add('hidden');
+    } else {
+      banner.classList.remove('hidden');
+      bannerText.textContent = langBanners[lang] || '';
+    }
+
+    // Translate dynamic text elements
+    document.querySelectorAll('[data-' + lang + ']').forEach(el => {
+      el.textContent = el.getAttribute('data-' + lang);
+    });
+
+    // Update section labels based on language
+    const morningLabel = document.getElementById('label-morning-section');
+    const pendingLabel = document.getElementById('label-pending-section');
+    if (lang === 'hi') {
+      morningLabel.textContent = 'सुबह की दिनचर्या (पूर्ण)';
+      pendingLabel.textContent = 'दोपहर और शाम के कार्य (लंबित)';
+    } else if (lang === 'bn') {
+      morningLabel.textContent = 'সকালের রুটিন (সম্পূর্ণ)';
+      pendingLabel.textContent = 'বিকাল এবং সন্ধ্যার কাজ (অপেক্ষমান)';
+    } else {
+      morningLabel.textContent = 'Morning Routine (Completed)';
+      pendingLabel.textContent = 'Afternoon & Evening (Pending)';
+    }
+
+    showToast(`Language switched to ${lang === 'hi' ? 'Hindi (हिन्दी)' : lang === 'bn' ? 'Bengali (বাংলা)' : 'English'}`);
+  }
+
+  function updateProgressBar() {
+    const percentage = Math.round((completedCount / totalTasks) * 100);
+    const fill = document.getElementById('progress-bar-fill');
+    const text = document.getElementById('progress-text');
+    const pctLabel = document.getElementById('progress-percentage-label');
+    const celeb = document.getElementById('celebration-card');
+
+    fill.style.width = percentage + '%';
+    pctLabel.textContent = percentage + '%';
+    text.textContent = `Day 3: ${completedCount} of ${totalTasks} tasks completed`;
+
+    const pendingLeft = totalTasks - completedCount;
+    document.getElementById('pending-counter-badge').textContent = `${pendingLeft} Pending`;
+
+    if (completedCount === totalTasks) {
+      celeb.classList.remove('hidden');
+    } else {
+      celeb.classList.add('hidden');
+    }
+  }
+
+  function togglePendingTask(btn, taskId) {
+    const card = document.getElementById(`task-card-${taskId}`);
+    const title = card.querySelector('.task-title');
+    const isDone = taskStates[taskId];
+
+    if (!isDone) {
+      taskStates[taskId] = true;
+      completedCount++;
+      btn.className = "mt-0.5 w-6 h-6 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-95";
+      title.classList.add('line-through', 'text-on-surface-variant');
+      title.classList.remove('text-on-surface');
+      showToast("Task completed! Great job.");
+    } else {
+      taskStates[taskId] = false;
+      completedCount--;
+      btn.className = "mt-0.5 w-6 h-6 rounded-md bg-surface-container-high hover:bg-surface-container text-transparent flex items-center justify-center shrink-0 transition-transform active:scale-95";
+      title.classList.remove('line-through', 'text-on-surface-variant');
+      title.classList.add('text-on-surface');
+      showToast("Task marked as pending.");
+    }
+
+    updateProgressBar();
+  }
+
+  function toggleTask(btn, id) {
+    showToast("Morning items are verified complete.");
+  }
+
+  function snoozeAlert(btn) {
+    btn.innerHTML = `<span class="material-symbols-outlined text-sm">notifications_active</span><span>Reminder in 15m</span>`;
+    btn.classList.add('bg-primary-fixed', 'text-on-primary-fixed');
+    showToast("Reminder set for 1:45 PM.");
+  }
+
+  function openExerciseVideoModal() {
+    document.getElementById('video-modal').classList.remove('hidden');
+  }
+
+  function closeExerciseVideoModal() {
+    document.getElementById('video-modal').classList.add('hidden');
+  }
+
+  function shareWithFamily() {
+    showToast("Secure caregiver link copied to clipboard!");
+  }
+
+  function downloadFridgeSheet() {
+    showToast("Preparing printable 1-page PDF...");
+  }
+
+  function simulateUpload() {
+    setDemoState('ocr');
+    setTimeout(() => {
+      setDemoState('active');
+      showToast("Discharge summary parsed successfully!");
+    }, 2800);
+  }
+
+  function setDemoState(state) {
+    const checkView = document.getElementById('checklist-view');
+    const emptyView = document.getElementById('empty-state-view');
+    const ocrView = document.getElementById('ocr-state-view');
+
+    document.querySelectorAll('.state-chip').forEach(el => {
+      el.className = "state-chip shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1";
+    });
+
+    const activeChip = document.getElementById(`chip-${state}`);
+    if (activeChip) {
+      activeChip.className = "state-chip shrink-0 px-3 py-1.5 rounded-full font-label-sm text-label-sm bg-primary text-on-primary shadow-sm flex items-center gap-1";
+    }
+
+    checkView.classList.add('hidden');
+    emptyView.classList.add('hidden');
+    ocrView.classList.add('hidden');
+
+    if (state === 'active') {
+      checkView.classList.remove('hidden');
+      completedCount = 3;
+      [4, 5, 6].forEach(id => {
+        taskStates[id] = false;
+        const card = document.getElementById(`task-card-${id}`);
+        const btn = card.querySelector('button');
+        const title = card.querySelector('.task-title');
+        btn.className = "mt-0.5 w-6 h-6 rounded-md bg-surface-container-high hover:bg-surface-container text-transparent flex items-center justify-center shrink-0 transition-transform active:scale-95";
+        title.classList.remove('line-through', 'text-on-surface-variant');
+        title.classList.add('text-on-surface');
+      });
+      updateProgressBar();
+    } else if (state === 'complete') {
+      checkView.classList.remove('hidden');
+      completedCount = 6;
+      [4, 5, 6].forEach(id => {
+        taskStates[id] = true;
+        const card = document.getElementById(`task-card-${id}`);
+        const btn = card.querySelector('button');
+        const title = card.querySelector('.task-title');
+        btn.className = "mt-0.5 w-6 h-6 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-95";
+        title.classList.add('line-through', 'text-on-surface-variant');
+        title.classList.remove('text-on-surface');
+      });
+      updateProgressBar();
+    } else if (state === 'empty') {
+      emptyView.classList.remove('hidden');
+    } else if (state === 'ocr') {
+      ocrView.classList.remove('hidden');
+    }
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast-msg');
+    const toastText = document.getElementById('toast-text');
+    toastText.textContent = msg;
+    toast.classList.remove('opacity-0', 'pointer-events-none');
+    toast.classList.add('opacity-100');
+    setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0', 'pointer-events-none');
+    }, 2400);
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-label-lg"><div class="flex justify-around items-center h-16 max-w-2xl mx-auto px-space-sm"><a class="flex flex-col items-center justify-center w-20 h-full text-on-surface-variant transition-colors hover:text-on-surface" data-path="dashboard" href="#"><span class="material-symbols-outlined text-2xl">dashboard</span><span class="font-label-sm text-label-sm">Dashboard</span></a><a class="flex flex-col items-center justify-center w-20 h-full text-on-surface-variant transition-colors hover:text-on-surface" data-path="summary-&amp;-rx" href="#"><span class="material-symbols-outlined text-2xl">description</span><span class="font-label-sm text-label-sm">Summary &amp; Rx</span></a><a aria-current="page" class="flex flex-col items-center justify-center w-20 h-full transition-colors text-primary font-label-lg" data-path="checklist" href="#"><span class="material-symbols-outlined text-2xl">check_circle</span><span class="font-label-sm text-label-sm">Checklist</span></a></div></nav></body></html>

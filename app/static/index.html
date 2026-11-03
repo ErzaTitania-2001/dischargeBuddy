@@ -1,0 +1,2186 @@
+<!DOCTYPE html>
+<html class="h-full bg-slate-50" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <title>DischargeBuddy — Your Recovery, Made Simpler</title>
+  
+  <!-- Typography & Icons -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS with Healthcare Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            },
+            primary: '#00685f',
+            'primary-hover': '#00524a',
+            'primary-light': '#e6f5f3',
+            secondary: '#006c49',
+            'secondary-light': '#e8f8f2',
+            surface: '#faf8ff',
+            'surface-card': '#ffffff',
+            'surface-muted': '#f4f6f9',
+            'text-main': '#131b2e',
+            'text-muted': '#5c677d',
+            'alert-danger': '#ba1a1a',
+            'alert-danger-bg': '#fef2f2',
+            'alert-warning': '#b45309',
+            'alert-warning-bg': '#fffbeb',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['Inter', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @layer base {
+      body {
+        font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+        color: #131b2e;
+        background-color: #f8fafc;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full flex flex-col antialiased">
+
+  <!-- ======================================================== -->
+  <!-- 1. AUTHENTICATION SCREENS (When unauthenticated)        -->
+  <!-- ======================================================== -->
+  <div id="auth-container" class="min-h-screen flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-teal-50/50 via-slate-50 to-slate-100">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <!-- App Brand Header -->
+      <div class="flex items-center justify-center gap-2.5 mb-2">
+        <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-md">
+          <span class="material-symbols-outlined text-2xl">medical_services</span>
+        </div>
+        <span class="text-2xl font-extrabold text-slate-900 tracking-tight">DischargeBuddy</span>
+      </div>
+      <p class="text-center text-sm text-slate-600 font-medium">Your recovery, made simpler.</p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="bg-white py-8 px-6 shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-200/70 sm:px-10">
+        
+        <!-- Auth Tabs: Sign In / Create Account -->
+        <div class="flex border-b border-slate-200 mb-6">
+          <button id="auth-tab-login" class="flex-1 pb-3 text-sm font-semibold text-primary border-b-2 border-primary transition-colors text-center" onclick="showAuthTab('login')">
+            Sign In
+          </button>
+          <button id="auth-tab-register" class="flex-1 pb-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-700 transition-colors text-center" onclick="showAuthTab('register')">
+            Create Account
+          </button>
+        </div>
+
+        <!-- Inline Error Banner -->
+        <div id="auth-error-banner" class="hidden mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+          <span class="material-symbols-outlined text-red-600 text-base shrink-0 mt-0.5">error</span>
+          <span id="auth-error-text" class="leading-relaxed">Error message</span>
+        </div>
+
+        <!-- FORM A: LOGIN -->
+        <form id="form-login" class="space-y-4" onsubmit="handleLoginSubmit(event)">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Email address</label>
+            <input type="email" id="login-email" required placeholder="name@example.com" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"/>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-semibold text-slate-700">Password</label>
+              <button type="button" class="text-xs text-primary font-medium hover:underline" onclick="showToast('Password reset is available for configured accounts.')">Forgot password?</button>
+            </div>
+            <div class="relative">
+              <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all pr-10"/>
+              <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600" onclick="togglePasswordVisibility('login-password', this)">
+                <span class="material-symbols-outlined text-lg">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="btn-login-submit" class="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-md shadow-teal-900/10 transition-colors flex items-center justify-center gap-2">
+            <span>Sign In</span>
+          </button>
+        </form>
+
+        <!-- FORM B: REGISTER -->
+        <form id="form-register" class="hidden space-y-4" onsubmit="handleRegisterSubmit(event)">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+            <input type="text" id="reg-name" required placeholder="Jane Doe" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"/>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Email address</label>
+            <input type="email" id="reg-email" required placeholder="jane@example.com" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"/>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+            <div class="relative">
+              <input type="password" id="reg-password" required minlength="6" placeholder="At least 6 characters" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all pr-10"/>
+              <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600" onclick="togglePasswordVisibility('reg-password', this)">
+                <span class="material-symbols-outlined text-lg">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Confirm Password</label>
+            <input type="password" id="reg-password-confirm" required minlength="6" placeholder="Re-enter password" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"/>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Language</label>
+            <select id="reg-language" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary bg-white">
+              <option value="en">English</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+              <option value="bn">বাংলা (Bengali)</option>
+            </select>
+          </div>
+
+          <button type="submit" id="btn-register-submit" class="w-full py-2.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-md shadow-teal-900/10 transition-colors flex items-center justify-center gap-2">
+            <span>Create Account</span>
+          </button>
+        </form>
+
+        <!-- CLEARLY LABELLED DEMO MODE SEPARATOR -->
+        <div class="mt-6 pt-5 border-t border-slate-100 flex flex-col gap-3">
+          <div class="relative flex py-1 items-center">
+            <div class="flex-grow border-t border-slate-200"></div>
+            <span class="flex-shrink mx-3 text-xs text-slate-400 font-semibold uppercase tracking-wider">Evaluation</span>
+            <div class="flex-grow border-t border-slate-200"></div>
+          </div>
+
+          <button type="button" onclick="handleDemoLogin()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
+            <span class="material-symbols-outlined text-base text-emerald-600">science</span>
+            <span>Try Demo Mode (Instant Synthetic Data)</span>
+          </button>
+          <p class="text-center text-[11px] text-slate-500">
+            Pre-loaded with sample orthopedic knee arthroscopy discharge data.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 2. AUTHENTICATED RESPONSIVE APP SHELL                    -->
+  <!-- ======================================================== -->
+  <div id="app-shell" class="hidden min-h-screen flex flex-col">
+    
+    <!-- DESKTOP FIXED SIDEBAR (~240px) -->
+    <aside class="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white border-r border-slate-200/80 z-30 shadow-sm">
+      <!-- Sidebar Brand Header -->
+      <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-100">
+        <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm">
+          <span class="material-symbols-outlined text-xl">medical_services</span>
+        </div>
+        <div>
+          <span class="font-extrabold text-base text-slate-900 tracking-tight block">DischargeBuddy</span>
+          <span class="text-[11px] text-slate-400 font-medium block">Post-Care Companion</span>
+        </div>
+      </div>
+
+      <!-- User Profile Card in Sidebar -->
+      <div class="p-4 mx-3 my-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-full bg-primary-light text-primary font-bold flex items-center justify-center text-sm shrink-0" id="user-avatar-initials">
+            U
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-slate-900 truncate" id="user-sidebar-name">User Name</p>
+            <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold" id="user-sidebar-badge">Authenticated</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-1 px-3 space-y-1 py-2">
+        <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-primary bg-primary-light" data-page="dashboard" onclick="navigateTo('dashboard')">
+          <span class="material-symbols-outlined text-lg">dashboard</span>
+          <span>Dashboard</span>
+        </button>
+
+        <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="documents" onclick="navigateTo('documents')">
+          <span class="material-symbols-outlined text-lg">folder_open</span>
+          <span>Documents &amp; Upload</span>
+        </button>
+
+        <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="summary" onclick="navigateTo('summary')">
+          <span class="material-symbols-outlined text-lg">description</span>
+          <span>Discharge Summary</span>
+        </button>
+
+        <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="care" onclick="navigateTo('care')">
+          <span class="material-symbols-outlined text-lg">check_circle</span>
+          <span>My Care Tasks</span>
+        </button>
+
+        <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="profile" onclick="navigateTo('profile')">
+          <span class="material-symbols-outlined text-lg">person</span>
+          <span>Profile &amp; Settings</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer (Language selector & Logout) -->
+      <div class="p-4 border-t border-slate-100 space-y-3">
+        <!-- Multilingual segmented toggle -->
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5 px-1">Language</span>
+          <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-xs">
+            <button class="lang-btn py-1 rounded-lg font-bold text-center transition-all bg-white text-primary shadow-sm" data-lang="en" onclick="setAppLanguage('en')">EN</button>
+            <button class="lang-btn py-1 rounded-lg text-slate-600 hover:text-slate-900 font-medium text-center transition-all" data-lang="hi" onclick="setAppLanguage('hi')">हिन्दी</button>
+            <button class="lang-btn py-1 rounded-lg text-slate-600 hover:text-slate-900 font-medium text-center transition-all" data-lang="bn" onclick="setAppLanguage('bn')">বাংলা</button>
+          </div>
+        </div>
+
+        <button onclick="handleLogout()" class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+          <span class="material-symbols-outlined text-base">logout</span>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- TOP HEADER (Desktop & Mobile Responsive) -->
+    <div class="lg:pl-64 flex flex-col flex-1">
+      <header class="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between shadow-xs">
+        
+        <!-- Mobile/Tablet Brand Logo -->
+        <div class="flex items-center gap-3 lg:hidden">
+          <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
+            <span class="material-symbols-outlined text-lg">medical_services</span>
+          </div>
+          <span class="font-bold text-slate-900 text-sm">DischargeBuddy</span>
+        </div>
+
+        <!-- Desktop Page Title & Context -->
+        <div class="hidden lg:flex items-center gap-3">
+          <h1 class="text-lg font-bold text-slate-900" id="header-page-title">Dashboard</h1>
+          <span class="text-xs text-slate-400" id="header-subtitle">— What you need to know today</span>
+        </div>
+
+        <!-- Header Actions: Regional Emergency Notice + Upload CTA + Language + Profile -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Regional Emergency Notice Tag -->
+          <a href="tel:911" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-semibold hover:bg-red-100 transition-colors">
+            <span class="material-symbols-outlined text-sm text-red-600">emergency</span>
+            <span>Emergency? Call 911 / Local ER</span>
+          </a>
+
+          <!-- Quick Upload Action Button -->
+          <button onclick="navigateTo('documents')" class="py-1.5 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+            <span class="material-symbols-outlined text-sm">upload_file</span>
+            <span class="hidden sm:inline">Upload Document</span>
+          </button>
+
+          <!-- Mobile Language Pill -->
+          <div class="lg:hidden flex items-center bg-slate-100 rounded-lg p-0.5 text-xs">
+            <button class="px-2 py-1 rounded font-semibold transition-all bg-white text-primary" onclick="setAppLanguage('en')">EN</button>
+            <button class="px-2 py-1 text-slate-600 hover:text-slate-900" onclick="setAppLanguage('hi')">हिन्दी</button>
+            <button class="px-2 py-1 text-slate-600 hover:text-slate-900" onclick="setAppLanguage('bn')">বাংলা</button>
+          </div>
+
+          <!-- Header User Avatar -->
+          <button onclick="navigateTo('profile')" class="w-8 h-8 rounded-full bg-primary-light text-primary font-bold flex items-center justify-center text-xs ring-2 ring-slate-100 hover:ring-primary transition-all" id="user-header-avatar">
+            U
+          </button>
+        </div>
+      </header>
+
+      <!-- MAIN PAGE VIEWPORT (Fluid Desktop & Mobile) -->
+      <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
+
+        <!-- ======================================================== -->
+        <!-- VIEW 1: HOME / DASHBOARD                                 -->
+        <!-- ======================================================== -->
+        <section id="view-dashboard" class="space-y-6">
+          
+          <!-- Meaningful User Greeting & Mode Notice -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 tracking-tight" id="dash-greeting">Welcome back</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Here is your recovery action plan and current discharge instructions.</p>
+            </div>
+            <div id="demo-mode-banner" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
+              <span class="material-symbols-outlined text-sm text-amber-600">info</span>
+              <span>Running in Demo Mode (Synthetic Clinical Data)</span>
+            </div>
+          </div>
+
+          <!-- EMPTY STATE FOR NEW USER WITH NO DOCUMENTS -->
+          <div id="dash-empty-state" class="hidden bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-12 text-center shadow-xs">
+            <div class="w-16 h-16 rounded-2xl bg-teal-50 text-primary mx-auto flex items-center justify-center mb-4">
+              <span class="material-symbols-outlined text-3xl">upload_file</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">No Discharge Documents Uploaded Yet</h3>
+            <p class="text-sm text-slate-500 max-w-md mx-auto mb-6 leading-relaxed">
+              Upload your hospital discharge paperwork (PDF or text). DischargeBuddy will extract your prescribed medications, daily care schedule, and critical warning signs in plain language.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button onclick="navigateTo('documents')" class="w-full sm:w-auto py-2.5 px-6 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base">add_circle</span>
+                <span>Upload Discharge Summary</span>
+              </button>
+              <button onclick="handleDemoLogin()" class="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base">science</span>
+                <span>Load Sample Demonstration</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- RETURNING USER DASHBOARD GRID (Fluid 2-Column Desktop Layout) -->
+          <div id="dash-active-content" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- LEFT MAIN COLUMN (2/3 Width) -->
+            <div class="lg:col-span-2 space-y-6">
+              
+              <!-- Next Action Card -->
+              <div class="bg-gradient-to-r from-teal-50/80 to-white rounded-2xl border border-teal-200/70 p-5 shadow-xs flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                  <span class="material-symbols-outlined text-xl">schedule</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-[11px] font-bold text-primary uppercase tracking-wider">Next Action</span>
+                  <h4 class="text-sm font-bold text-slate-900 mt-0.5" id="dash-next-action-title">Review pending post-op instructions</h4>
+                  <p class="text-xs text-slate-600 mt-1" id="dash-next-action-desc">Check your prescribed medication schedule and wound inspection instructions.</p>
+                  <div class="mt-3">
+                    <button onclick="navigateTo('care')" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                      <span>Go to Care Checklist</span>
+                      <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Discharge Documents Section -->
+              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Recent Discharge Documents</h3>
+                  <button onclick="navigateTo('documents')" class="text-xs text-primary font-semibold hover:underline">Manage All</button>
+                </div>
+
+                <div id="dash-recent-docs-list" class="space-y-3">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+
+              <!-- Daily Comfort / Self-Report Widget -->
+              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-bold text-slate-900">Daily Pain &amp; Comfort Tracker</h3>
+                  <span class="text-xs text-slate-400 font-medium">Self-Report</span>
+                </div>
+                <p class="text-xs text-slate-500">Rate your current comfort level from 1 (Minimal) to 10 (Severe):</p>
+                
+                <div class="flex items-center justify-between gap-1 overflow-x-auto py-1">
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(1)">1</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(2)">2</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-primary text-white text-xs font-bold shadow-sm" onclick="setPainScore(3)">3</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(4)">4</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(5)">5</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(6)">6</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(7)">7</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(8)">8</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(9)">9</button>
+                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(10)">10</button>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 flex items-center gap-2" id="pain-feedback-box">
+                  <span class="material-symbols-outlined text-primary text-base">info</span>
+                  <span id="pain-feedback-text">Score 3: Moderate discomfort. Keep leg elevated above heart level and apply ice pack.</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT SECONDARY CARE COLUMN (1/3 Width) -->
+            <div class="space-y-6">
+              
+              <!-- Care Adherence Summary Card -->
+              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Care Task Adherence</h3>
+                  <span class="text-xs font-bold text-primary" id="dash-task-pct">0%</span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div class="bg-secondary h-2.5 rounded-full transition-all duration-500" id="dash-task-fill" style="width: 0%;"></div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <span id="dash-task-counts">0 of 0 tasks completed</span>
+                  <button onclick="navigateTo('care')" class="font-semibold text-primary hover:underline">View All</button>
+                </div>
+              </div>
+
+              <!-- Upcoming Follow-Up Visits -->
+              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Follow-Up Schedule</h3>
+                  <span class="text-xs font-semibold text-primary" id="dash-apt-badge">0 Scheduled</span>
+                </div>
+
+                <div id="dash-appointments-list" class="space-y-2.5">
+                  <!-- Dynamically populated -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- VIEW 2: DOCUMENTS & UPLOAD (Step-by-Step Review Workflow)-->
+        <!-- ======================================================== -->
+        <section id="view-documents" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Documents &amp; Intake</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Upload, review extracted text, and generate patient-friendly explanations.</p>
+            </div>
+            <button onclick="loadSampleIntoIntake()" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">science</span>
+              <span>Test with Synthetic Sample Document</span>
+            </button>
+          </div>
+
+          <!-- STEP A: UPLOAD & INGESTION -->
+          <div id="intake-step-upload" class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">1</span>
+                <h3 class="text-sm font-bold text-slate-900">Select Document or Paste Text</h3>
+              </div>
+              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium">
+                <button id="intake-tab-pdf" class="px-3 py-1 rounded-lg bg-white text-primary font-bold shadow-xs transition-all" onclick="switchIntakeMode('pdf')">Upload PDF</button>
+                <button id="intake-tab-text" class="px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition-all" onclick="switchIntakeMode('text')">Paste Text</button>
+              </div>
+            </div>
+
+            <!-- PDF Drag & Drop Zone -->
+            <div id="intake-mode-pdf" class="space-y-3">
+              <div class="border-2 border-dashed border-teal-200 hover:border-primary bg-teal-50/30 rounded-2xl p-8 text-center cursor-pointer transition-colors" onclick="document.getElementById('intake-file-input').click()">
+                <input type="file" id="intake-file-input" class="hidden" accept=".pdf,.txt,.md" onchange="handleIntakeFileSelected(event)"/>
+                <div class="w-12 h-12 rounded-full bg-primary-light text-primary mx-auto flex items-center justify-center mb-3">
+                  <span class="material-symbols-outlined text-2xl">cloud_upload</span>
+                </div>
+                <h4 class="text-sm font-bold text-slate-900">Click to upload or drag and drop</h4>
+                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Hospital discharge forms, clinic notes (PDF up to 25MB)</p>
+                <div class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-sm">
+                  <span class="material-symbols-outlined text-sm">attach_file</span>
+                  <span>Select Local File</span>
+                </div>
+              </div>
+
+              <div id="intake-selected-badge" class="hidden p-3 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="material-symbols-outlined text-primary text-lg">description</span>
+                  <span class="text-xs font-bold text-slate-800 truncate" id="intake-selected-filename">filename.pdf</span>
+                </div>
+                <button type="button" class="text-xs text-red-600 font-semibold hover:underline" onclick="clearIntakeFile()">Remove</button>
+              </div>
+
+              <!-- EXACT DUPLICATE WARNING CARD -->
+              <div id="intake-exact-duplicate-card" class="hidden p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-3">
+                <div class="flex items-start gap-2.5">
+                  <span class="material-symbols-outlined text-red-600 text-lg shrink-0 mt-0.5">content_copy</span>
+                  <div class="space-y-1 min-w-0">
+                    <h5 class="font-bold text-red-800 text-xs">This discharge summary may already exist.</h5>
+                    <p class="text-[11px] text-red-700 leading-relaxed">
+                      An identical document named <strong class="font-mono text-red-900" id="exact-dup-filename">file.pdf</strong> was already uploaded on <span id="exact-dup-date">Oct 24</span>.
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <button type="button" id="btn-view-existing-doc" class="py-1.5 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs">visibility</span>
+                    <span>View Existing Document</span>
+                  </button>
+                  <button type="button" onclick="clearIntakeFile()" class="py-1.5 px-3 rounded-lg bg-white border border-red-300 text-red-700 hover:bg-red-100 font-semibold text-xs transition-colors">
+                    Cancel Upload
+                  </button>
+                </div>
+              </div>
+
+              <!-- POTENTIAL DUPLICATE WARNING CARD -->
+              <div id="intake-potential-duplicate-card" class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-3">
+                <div class="flex items-start gap-2.5">
+                  <span class="material-symbols-outlined text-amber-600 text-lg shrink-0 mt-0.5">warning</span>
+                  <div class="space-y-1 min-w-0">
+                    <h5 class="font-bold text-amber-800 text-xs">Potential Duplicate Detected</h5>
+                    <p class="text-[11px] text-amber-700 leading-relaxed" id="potential-dup-desc">
+                      This file looks very similar to an existing document. Do you want to continue?
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <button type="button" onclick="confirmPotentialDuplicate()" class="py-1.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors">
+                    Continue Upload
+                  </button>
+                  <button type="button" onclick="clearIntakeFile()" class="py-1.5 px-3 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 font-semibold text-xs transition-colors">
+                    Cancel Upload
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Paste Text Area -->
+            <div id="intake-mode-text" class="hidden space-y-2">
+              <label class="block text-xs font-semibold text-slate-700">Paste document text below:</label>
+              <textarea id="intake-paste-area" rows="8" placeholder="Paste the text from your hospital discharge summary here..." class="w-full text-xs font-mono p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+            </div>
+
+            <!-- Error message if extraction fails -->
+            <div id="intake-error-box" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+              <span class="material-symbols-outlined text-red-600 text-base">error</span>
+              <span id="intake-error-text">Please select a file or paste text.</span>
+            </div>
+
+            <!-- Proceed to Review Button -->
+            <div class="flex justify-end pt-2">
+              <button onclick="proceedToReviewStep()" id="btn-extract-proceed" class="py-2.5 px-6 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2">
+                <span>Extract &amp; Review Text</span>
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP B: EDITABLE TEXT REVIEW BEFORE AI ANALYSIS -->
+          <div id="intake-step-review" class="hidden bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">2</span>
+                <h3 class="text-sm font-bold text-slate-900">Review &amp; Edit Extracted Text</h3>
+              </div>
+              <span class="text-xs text-slate-400" id="review-stats-badge">1 page • 2,450 characters</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+              <span class="material-symbols-outlined text-amber-600 text-base mt-0.5">help_outline</span>
+              <p class="leading-relaxed">
+                Review the extracted clinical text below. If optical character recognition missed any doctor's orders or numbers, you can edit them directly before triggering AI analysis.
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Editable Clinical Text:</label>
+              <textarea id="review-editable-text" rows="12" class="w-full text-xs font-mono p-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary leading-relaxed"></textarea>
+            </div>
+
+            <!-- Target Language for AI Translation -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-700">Target Explanation Language:</span>
+                <select id="review-target-lang" class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white">
+                  <option value="en">English</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                  <option value="bn">বাংলা (Bengali)</option>
+                </select>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button onclick="cancelReviewStep()" class="py-2 px-4 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                  Back / Re-upload
+                </button>
+                <button onclick="triggerAiAnalysis()" id="btn-analyze-confirmed" class="py-2.5 px-6 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2">
+                  <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                  <span>Confirm &amp; Analyze with AI</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Existing Documents Archive Section -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Processed Document History</h3>
+            <div id="docs-history-list" class="space-y-3">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- VIEW 3: DISCHARGE SUMMARY RESULTS                        -->
+        <!-- ======================================================== -->
+        <section id="view-summary" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 tracking-tight" id="sum-doc-title">Discharge Summary &amp; Rx</h2>
+              <p class="text-xs text-slate-500 mt-0.5">AI-assisted plain-language guidance translated from your medical documentation.</p>
+            </div>
+            <button onclick="navigateTo('documents')" class="py-1.5 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 self-start">
+              <span class="material-symbols-outlined text-sm">upload_file</span>
+              <span>Upload Another</span>
+            </button>
+          </div>
+
+          <!-- Metadata Context Card -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <span class="text-[10px] font-bold text-primary uppercase tracking-wider">Hospital Document</span>
+                <h3 class="text-base font-bold text-slate-900" id="sum-facility">St. Jude Memorial Hospital</h3>
+              </div>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 self-start" id="sum-record-no">
+                Record #SJM-84920
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div class="p-2.5 rounded-xl bg-slate-50">
+                <span class="text-[10px] text-slate-400 block font-medium">Patient</span>
+                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-patient-name">Patient Name</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50">
+                <span class="text-[10px] text-slate-400 block font-medium">Attending Clinician</span>
+                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-attending">Dr. Robert Chen, MD</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50">
+                <span class="text-[10px] text-slate-400 block font-medium">Discharge Date</span>
+                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-date">Recent</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50">
+                <span class="text-[10px] text-slate-400 block font-medium">Procedure / Diagnosis</span>
+                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-procedure">Knee Arthroscopy</span>
+              </div>
+            </div>
+
+            <!-- Precedence notice -->
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-start gap-2.5 text-xs text-slate-600">
+              <span class="material-symbols-outlined text-primary text-base shrink-0 mt-0.5">verified_user</span>
+              <p class="leading-relaxed">
+                <strong class="text-slate-800">Clinical Precedence:</strong> AI translations provide patient-friendly guidance. Your original medical document and healthcare professional take precedence. Never alter or discontinue prescribed medication without physician consultation.
+              </p>
+            </div>
+          </div>
+
+          <!-- Plain-Language Summary Section -->
+          <div class="bg-gradient-to-br from-teal-50/50 via-white to-slate-50 rounded-2xl border border-teal-200/80 p-6 shadow-xs space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+              <h3 class="text-sm font-bold text-primary uppercase tracking-wide">Plain-Language Summary</h3>
+            </div>
+            
+            <p class="text-sm text-slate-800 leading-relaxed font-medium" id="sum-plain-body">
+              Loading clinical explanation...
+            </p>
+
+            <div class="flex flex-wrap gap-2 pt-1" id="sum-milestones-container">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Prescribed Medications (Visual Distinction: Verbatim Order vs AI Explanation) -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">Prescribed Medications</h3>
+                <p class="text-xs text-slate-500">Exact doctor's order paired with simple patient instructions</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-slate-100 text-xs font-semibold text-slate-700" id="sum-meds-count">3 Prescriptions</span>
+            </div>
+
+            <div id="sum-medications-list" class="space-y-4">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Flagged Ambiguities / Missing Information -->
+          <div id="sum-ambiguity-card" class="hidden p-5 rounded-2xl bg-amber-50 border border-amber-200 shadow-xs space-y-2">
+            <div class="flex items-center gap-2 text-amber-800">
+              <span class="material-symbols-outlined text-base">help_outline</span>
+              <h4 class="text-xs font-bold uppercase tracking-wider">Flagged for Clinician Review</h4>
+            </div>
+            <ul class="text-xs text-amber-900 space-y-1.5 pl-4 list-disc" id="sum-ambiguity-list">
+              <!-- Injected -->
+            </ul>
+          </div>
+
+          <!-- Red-Flag Warning Signs -->
+          <div class="bg-red-50/80 border border-red-200 rounded-2xl p-6 shadow-xs space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-2xl">shield_with_heart</span>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-red-600">Discharge Safety Protocol</span>
+                <h3 class="text-base font-bold text-red-950">Red-Flag Warning Signs</h3>
+                <p class="text-xs text-red-800/80 mt-0.5">Call your clinic or seek emergency medical care immediately if you experience:</p>
+              </div>
+            </div>
+
+            <div id="sum-warnings-list" class="space-y-2.5">
+              <!-- Injected dynamically -->
+            </div>
+
+            <div class="pt-2 flex flex-col sm:flex-row gap-3">
+              <a href="tel:5550192834" class="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base">phone_in_talk</span>
+                <span>Call Care Team / Triage</span>
+              </a>
+              <a href="tel:911" class="flex-1 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-red-700 border border-red-300 text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-base text-red-600">emergency</span>
+                <span>Call Local Emergency Services (911)</span>
+              </a>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- VIEW 4: MY CARE (Tasks, Appointments & Filters)          -->
+        <!-- ======================================================== -->
+        <section id="view-care" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 tracking-tight">My Care Plan</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Track your recovery milestones, daily tasks, and appointments.</p>
+            </div>
+
+            <!-- Task Filters: All, Upcoming, Completed -->
+            <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-xs text-xs font-semibold">
+              <button class="care-filter-btn px-3 py-1 rounded-lg bg-primary text-white shadow-xs" data-filter="all" onclick="filterCareTasks('all')">All</button>
+              <button class="care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900" data-filter="pending" onclick="filterCareTasks('pending')">Upcoming</button>
+              <button class="care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900" data-filter="completed" onclick="filterCareTasks('completed')">Completed</button>
+            </div>
+          </div>
+
+          <!-- Adherence Progress Card -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold text-primary uppercase tracking-wider">Recovery Milestones</span>
+                <h3 class="text-sm font-bold text-slate-900 mt-0.5" id="care-header-count">0 of 0 tasks completed</h3>
+              </div>
+              <span class="text-2xl font-bold text-secondary" id="care-header-pct">0%</span>
+            </div>
+
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-secondary h-2.5 rounded-full transition-all duration-500" id="care-main-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- 100% Celebration Banner -->
+          <div id="care-celebration-banner" class="hidden p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-3">
+            <span class="material-symbols-outlined text-emerald-600 text-2xl" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+            <div>
+              <h4 class="text-xs font-bold">All Recovery Tasks Completed!</h4>
+              <p class="text-xs text-emerald-800">Great adherence today. Rest up, maintain elevation, and stay hydrated.</p>
+            </div>
+          </div>
+
+          <!-- Empty Tasks State -->
+          <div id="care-empty-state" class="hidden bg-white rounded-2xl border border-slate-200/80 p-8 text-center shadow-xs">
+            <span class="material-symbols-outlined text-3xl text-slate-400 mb-2">task_alt</span>
+            <h4 class="text-sm font-bold text-slate-800">No Care Tasks Found</h4>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Upload a hospital discharge summary to automatically extract your recovery schedule.</p>
+            <button onclick="navigateTo('documents')" class="py-2 px-4 rounded-xl bg-primary text-white text-xs font-bold">Upload Document</button>
+          </div>
+
+          <!-- Tasks List -->
+          <div id="care-tasks-list" class="space-y-3">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- VIEW 5: PROFILE & SETTINGS                               -->
+        <!-- ======================================================== -->
+        <section id="view-profile" class="hidden space-y-6">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Account &amp; Preferences</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Manage your personal settings and language preferences.</p>
+          </div>
+
+          <!-- User Card -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs flex items-center gap-4">
+            <div class="w-14 h-14 rounded-full bg-primary-light text-primary font-bold text-xl flex items-center justify-center shrink-0" id="profile-avatar-big">
+              U
+            </div>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-base font-bold text-slate-900" id="profile-name-display">User Name</h3>
+              <p class="text-xs text-slate-500" id="profile-email-display">user@example.com</p>
+              <div class="mt-2 flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700" id="profile-account-type">Standard Account</span>
+                <span class="text-xs text-slate-400" id="profile-created-display">Member since Oct 2024</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preferences Form -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Preferences</h3>
+            
+            <div class="max-w-md space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Display Name</label>
+                <input type="text" id="pref-display-name" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary"/>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Language</label>
+                <select id="pref-language" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary bg-white">
+                  <option value="en">English</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                  <option value="bn">বাংলা (Bengali)</option>
+                </select>
+              </div>
+
+              <div class="pt-2">
+                <button onclick="saveProfilePreferences()" class="py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-colors">
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Session & Privacy -->
+          <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-3 text-xs">
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Privacy &amp; Safety Guarantees</h3>
+            <div class="space-y-2 text-slate-600">
+              <p>• <strong>Zero Persistent Document Storage:</strong> Discharge paperwork is analyzed in-memory. Documents are isolated strictly to your active account session.</p>
+              <p>• <strong>Doctor Precedence:</strong> AI outputs are explanatory translations and do not substitute for professional medical advice.</p>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-slate-500 font-medium">Ready to end your session?</span>
+              <button onclick="handleLogout()" class="py-1.5 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold border border-red-200 transition-colors">
+                Sign Out
+              </button>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+
+    <!-- MOBILE FIXED BOTTOM NAVIGATION BAR (< 1024px) -->
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 pb-safe shadow-lg">
+      <div class="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
+        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-primary font-bold" data-page="dashboard" onclick="navigateTo('dashboard')">
+          <span class="material-symbols-outlined text-2xl">dashboard</span>
+          <span class="text-[10px]">Home</span>
+        </button>
+
+        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="documents" onclick="navigateTo('documents')">
+          <span class="material-symbols-outlined text-2xl">folder_open</span>
+          <span class="text-[10px]">Documents</span>
+        </button>
+
+        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="care" onclick="navigateTo('care')">
+          <span class="material-symbols-outlined text-2xl">check_circle</span>
+          <span class="text-[10px]">My Care</span>
+        </button>
+
+        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="profile" onclick="navigateTo('profile')">
+          <span class="material-symbols-outlined text-2xl">person</span>
+          <span class="text-[10px]">Profile</span>
+        </button>
+      </div>
+    </nav>
+
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 3. GLOBAL TOAST NOTIFICATION & PROCESSING OVERLAY        -->
+  <!-- ======================================================== -->
+  <div id="processing-overlay" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary animate-spin">sync</span>
+          <h4 class="text-sm font-bold text-slate-900">Analyzing Document</h4>
+        </div>
+        <span class="text-xs font-bold text-primary" id="proc-pct">60%</span>
+      </div>
+
+      <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div class="bg-primary h-2 rounded-full transition-all duration-300" id="proc-bar" style="width: 60%;"></div>
+      </div>
+
+      <div class="space-y-2 text-xs pt-1">
+        <div class="flex items-center gap-2 text-emerald-700">
+          <span class="material-symbols-outlined text-base">check_circle</span>
+          <span>1. Ingesting Reviewed Clinical Text</span>
+        </div>
+        <div class="flex items-center gap-2 text-emerald-700">
+          <span class="material-symbols-outlined text-base">check_circle</span>
+          <span>2. Entity &amp; Medication Verification</span>
+        </div>
+        <div class="flex items-center gap-2 text-primary font-bold">
+          <span class="material-symbols-outlined text-base animate-spin">progress_activity</span>
+          <span>3. Gemini Plain-Language Synthesis</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-400">
+          <span class="material-symbols-outlined text-base">radio_button_unchecked</span>
+          <span>4. Populating Care Plan &amp; Rx</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div id="modal-confirm-delete" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-2xl">delete</span>
+          </div>
+          <div>
+            <h4 class="text-base font-bold text-slate-900">Remove Discharge Document</h4>
+            <p class="text-xs text-slate-500">This action requires explicit confirmation.</p>
+          </div>
+        </div>
+        <button type="button" class="text-slate-400 hover:text-slate-600 rounded-lg p-1" onclick="closeDeleteModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 space-y-2">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 font-medium">Document:</span>
+          <span id="delete-modal-filename" class="font-bold text-slate-900 font-mono break-all">filename.pdf</span>
+        </div>
+        <p class="text-slate-600 leading-relaxed pt-1 border-t border-slate-200/60">
+          Removing this document will also remove its associated AI-generated summary and any care tasks created exclusively by this document.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button type="button" onclick="closeDeleteModal()" class="py-2 px-4 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+          Cancel
+        </button>
+        <button type="button" id="btn-confirm-delete-doc" onclick="confirmDocumentDeletion()" class="py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">delete_forever</span>
+          <span>Remove Document</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="global-toast" class="fixed bottom-20 lg:bottom-8 right-1/2 translate-x-1/2 lg:translate-x-0 lg:right-8 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
+    <span class="material-symbols-outlined text-emerald-400 text-base" id="toast-icon">check_circle</span>
+    <span id="toast-text">Update complete</span>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 4. APPLICATION LOGIC & STATE MANAGEMENT (JavaScript)     -->
+  <!-- ======================================================== -->
+  <script>
+    // Typed Client State Store
+    const state = {
+      user: null,
+      token: null,
+      currentPage: 'dashboard',
+      currentLanguage: 'en',
+      documents: [],
+      tasks: [],
+      currentDocumentAnalysis: null,
+      pendingDeleteDocId: null,
+      intake: {
+        mode: 'pdf',
+        file: null,
+        extractedText: '',
+        filename: null
+      },
+      careFilter: 'all'
+    };
+
+    // Filename Normalization and Duplicate Detection Utilities
+    function normalizeFilename(filename) {
+      if (!filename) return '';
+      // Strip extension (e.g. .pdf, .txt)
+      const base = filename.replace(/\.[^/.]+$/, '').trim().toLowerCase();
+      // Replace separators (underscores, hyphens, dots) with single spaces
+      return base.replace(/[_\-\.]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function extractStemWithoutCopyMarkers(norm) {
+      if (!norm) return '';
+      let stem = norm;
+      const patterns = [
+        /\s*\(\s*\d+\s*\)$/,
+        /\s*\(\s*copy(\s*\d+)?\s*\)$/i,
+        /\s+copy(\s+\d+)?$/i,
+        /\s+\d+$/
+      ];
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const p of patterns) {
+          const next = stem.replace(p, '').trim();
+          if (next !== stem && next.length > 0) {
+            stem = next;
+            changed = true;
+          }
+        }
+      }
+      return stem;
+    }
+
+    function checkClientDuplicate(filename) {
+      if (!filename || !state.documents || state.documents.length === 0) {
+        return { isDuplicate: false, type: 'none' };
+      }
+      const targetNorm = normalizeFilename(filename);
+      const targetStem = extractStemWithoutCopyMarkers(targetNorm);
+
+      // 1. Check exact match
+      for (const doc of state.documents) {
+        const docFn = doc.filename || doc.title || '';
+        if (normalizeFilename(docFn) === targetNorm) {
+          return {
+            isDuplicate: true,
+            type: 'exact',
+            message: 'This discharge summary may already exist.',
+            existingDoc: doc
+          };
+        }
+      }
+
+      // 2. Check potential match with copy markers
+      for (const doc of state.documents) {
+        const docFn = doc.filename || doc.title || '';
+        const docNorm = normalizeFilename(docFn);
+        const docStem = extractStemWithoutCopyMarkers(docNorm);
+        if (targetStem === docStem && targetStem.length >= 4) {
+          return {
+            isDuplicate: true,
+            type: 'potential',
+            message: `This file appears similar to '${docFn}'.`,
+            existingDoc: doc
+          };
+        }
+      }
+
+      return { isDuplicate: false, type: 'none' };
+    }
+
+    // Keyboard accessibility for modals
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeDeleteModal();
+      }
+    });
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Check for saved session token in sessionStorage (no passwords in storage)
+      const savedToken = sessionStorage.getItem('dischargebuddy_session_token');
+      if (savedToken) {
+        state.token = savedToken;
+        await restoreSession();
+      } else {
+        renderAuthView();
+      }
+    });
+
+    // ----------------------------------------------------
+    // Auth Workflows (Login, Register, Demo, Logout)
+    // ----------------------------------------------------
+    function showAuthTab(tab) {
+      const loginTab = document.getElementById('auth-tab-login');
+      const regTab = document.getElementById('auth-tab-register');
+      const formLogin = document.getElementById('form-login');
+      const formReg = document.getElementById('form-register');
+      hideAuthError();
+
+      if (tab === 'login') {
+        loginTab.className = 'flex-1 pb-3 text-sm font-semibold text-primary border-b-2 border-primary transition-colors text-center';
+        regTab.className = 'flex-1 pb-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-700 transition-colors text-center';
+        formLogin.classList.remove('hidden');
+        formReg.classList.add('hidden');
+      } else {
+        regTab.className = 'flex-1 pb-3 text-sm font-semibold text-primary border-b-2 border-primary transition-colors text-center';
+        loginTab.className = 'flex-1 pb-3 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-700 transition-colors text-center';
+        formReg.classList.remove('hidden');
+        formLogin.classList.add('hidden');
+      }
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">visibility_off</span>';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">visibility</span>';
+      }
+    }
+
+    function showAuthError(msg) {
+      const banner = document.getElementById('auth-error-banner');
+      document.getElementById('auth-error-text').textContent = msg;
+      banner.classList.remove('hidden');
+    }
+    function hideAuthError() {
+      document.getElementById('auth-error-banner').classList.add('hidden');
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      hideAuthError();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Login failed.');
+
+        setSession(data.user, data.token);
+      } catch (err) {
+        showAuthError(err.message);
+      }
+    }
+
+    async function handleRegisterSubmit(e) {
+      e.preventDefault();
+      hideAuthError();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-password-confirm').value;
+      const preferred_language = document.getElementById('reg-language').value;
+
+      if (password !== confirm) {
+        showAuthError('Passwords do not match.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, preferred_language })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Registration failed.');
+
+        setSession(data.user, data.token);
+        showToast(`Welcome to DischargeBuddy, ${name}!`);
+      } catch (err) {
+        showAuthError(err.message);
+      }
+    }
+
+    async function handleDemoLogin() {
+      try {
+        const res = await fetch('/api/auth/demo', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error('Demo initialization failed.');
+
+        setSession(data.user, data.token);
+        showToast('Demo Mode initialized with sample recovery plan.');
+      } catch (err) {
+        showAuthError(err.message);
+      }
+    }
+
+    function setSession(user, token) {
+      state.user = user;
+      state.token = token;
+      state.currentLanguage = user.preferred_language || 'en';
+      sessionStorage.setItem('dischargebuddy_session_token', token);
+      
+      renderAppShell();
+      loadUserData();
+    }
+
+    async function restoreSession() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          state.user = data.user;
+          state.currentLanguage = data.user.preferred_language || 'en';
+          renderAppShell();
+          await loadUserData();
+        } else {
+          sessionStorage.removeItem('dischargebuddy_session_token');
+          renderAuthView();
+        }
+      } catch {
+        renderAuthView();
+      }
+    }
+
+    async function handleLogout() {
+      try {
+        if (state.token) {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${state.token}` }
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      // Clear memory and session
+      state.user = null;
+      state.token = null;
+      state.documents = [];
+      state.tasks = [];
+      state.currentDocumentAnalysis = null;
+      sessionStorage.removeItem('dischargebuddy_session_token');
+
+      renderAuthView();
+      showToast('Signed out successfully.');
+    }
+
+    function renderAuthView() {
+      document.getElementById('auth-container').classList.remove('hidden');
+      document.getElementById('app-shell').classList.add('hidden');
+    }
+
+    function renderAppShell() {
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+
+      // Populate user info in header and sidebar
+      const initials = state.user.name ? state.user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase() : 'U';
+      document.getElementById('user-avatar-initials').textContent = initials;
+      document.getElementById('user-header-avatar').textContent = initials;
+      document.getElementById('user-sidebar-name').textContent = state.user.name;
+
+      const badge = document.getElementById('user-sidebar-badge');
+      const demoBanner = document.getElementById('demo-mode-banner');
+      if (state.user.is_demo) {
+        badge.textContent = 'Demo Mode';
+        badge.className = 'inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800';
+        demoBanner.classList.remove('hidden');
+      } else {
+        badge.textContent = 'Standard User';
+        badge.className = 'inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800';
+        demoBanner.classList.add('hidden');
+      }
+
+      // Set greeting
+      document.getElementById('dash-greeting').textContent = `Welcome back, ${state.user.name.split(' ')[0]}`;
+
+      // Profile settings
+      document.getElementById('profile-name-display').textContent = state.user.name;
+      document.getElementById('profile-email-display').textContent = state.user.email;
+      document.getElementById('profile-avatar-big').textContent = initials;
+      document.getElementById('profile-created-display').textContent = `Member since ${state.user.created_at || 'Recent'}`;
+      document.getElementById('profile-account-type').textContent = state.user.is_demo ? 'Interactive Demo Account' : 'Verified Patient Account';
+      document.getElementById('pref-display-name').value = state.user.name;
+      document.getElementById('pref-language').value = state.currentLanguage;
+
+      setAppLanguage(state.currentLanguage, false);
+      navigateTo('dashboard');
+    }
+
+    // ----------------------------------------------------
+    // User Data Management (Documents & Tasks)
+    // ----------------------------------------------------
+    async function loadUserData() {
+      if (!state.token) return;
+
+      try {
+        const [docsRes, tasksRes] = await Promise.all([
+          fetch('/api/user/documents', { headers: { 'Authorization': `Bearer ${state.token}` } }),
+          fetch('/api/user/tasks', { headers: { 'Authorization': `Bearer ${state.token}` } })
+        ]);
+
+        if (docsRes.ok) {
+          const docsData = await docsRes.json();
+          state.documents = docsData.documents || [];
+          if (state.documents.length > 0 && !state.currentDocumentAnalysis) {
+            state.currentDocumentAnalysis = state.documents[0].analysis;
+          }
+        }
+
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          state.tasks = tasksData.tasks || [];
+        }
+
+        renderDashboard();
+        renderDocumentsView();
+        renderCareTasks();
+        if (state.currentDocumentAnalysis) {
+          renderDischargeSummary(state.currentDocumentAnalysis);
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    }
+
+    // ----------------------------------------------------
+    // Navigation Between Views
+    // ----------------------------------------------------
+    function navigateTo(page) {
+      state.currentPage = page;
+      const pages = ['dashboard', 'documents', 'summary', 'care', 'profile'];
+      
+      pages.forEach(p => {
+        const el = document.getElementById(`view-${p}`);
+        if (p === page) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+
+      // Update sidebar nav buttons
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if (btn.getAttribute('data-page') === page) {
+          btn.className = 'nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-primary bg-primary-light';
+        } else {
+          btn.className = 'nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all';
+        }
+      });
+
+      // Update mobile nav buttons
+      document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        if (btn.getAttribute('data-page') === page) {
+          btn.className = 'mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-primary font-bold';
+        } else {
+          btn.className = 'mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium';
+        }
+      });
+
+      // Header title update
+      const titles = {
+        dashboard: { title: 'Dashboard', sub: '— What you need to know today' },
+        documents: { title: 'Documents & Intake', sub: '— Review and upload paperwork' },
+        summary: { title: 'Discharge Summary & Rx', sub: '— Plain-language medical instructions' },
+        care: { title: 'My Care Plan', sub: '— Daily recovery tasks & follow-up visits' },
+        profile: { title: 'Profile & Settings', sub: '— Preferences and account safety' }
+      };
+      document.getElementById('header-page-title').textContent = titles[page].title;
+      document.getElementById('header-subtitle').textContent = titles[page].sub;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ----------------------------------------------------
+    // Dashboard Rendering (Handles Empty vs Returning)
+    // ----------------------------------------------------
+    function renderDashboard() {
+      const emptyState = document.getElementById('dash-empty-state');
+      const activeContent = document.getElementById('dash-active-content');
+
+      if (state.documents.length === 0 && state.tasks.length === 0) {
+        emptyState.classList.remove('hidden');
+        activeContent.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      activeContent.classList.remove('hidden');
+
+      // 1. Next Action Banner
+      const pendingTask = state.tasks.find(t => !t.completed);
+      if (pendingTask) {
+        document.getElementById('dash-next-action-title').textContent = pendingTask.title;
+        document.getElementById('dash-next-action-desc').textContent = `${pendingTask.time_of_day || 'Upcoming'} • ${pendingTask.instructions || 'Prescribed recovery action'}`;
+      } else if (state.tasks.length > 0) {
+        document.getElementById('dash-next-action-title').textContent = 'All daily tasks complete!';
+        document.getElementById('dash-next-action-desc').textContent = 'Rest, elevate your limb, and maintain hydration.';
+      } else {
+        document.getElementById('dash-next-action-title').textContent = 'No active tasks';
+        document.getElementById('dash-next-action-desc').textContent = 'Upload paperwork to generate your care tasks.';
+      }
+
+      // 2. Recent Documents list
+      const docsList = document.getElementById('dash-recent-docs-list');
+      docsList.innerHTML = '';
+      state.documents.slice(0, 3).forEach(doc => {
+        const item = document.createElement('div');
+        item.className = 'p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3';
+        item.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-lg bg-teal-100/60 text-primary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-xl">description</span>
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-xs font-bold text-slate-900 truncate" title="${escapeHtml(doc.filename || doc.title)}">${escapeHtml(doc.title || doc.filename)}</h4>
+              <p class="text-[11px] text-slate-400 mt-0.5 truncate">${escapeHtml(doc.uploaded_at)}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="viewDocumentSummary('${doc.id}')" class="py-1 px-3 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:text-primary hover:border-primary transition-colors">
+              View
+            </button>
+            <button onclick="openDeleteModal('${doc.id}')" class="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Remove Document">
+              <span class="material-symbols-outlined text-base">delete</span>
+            </button>
+          </div>
+        `;
+        docsList.appendChild(item);
+      });
+
+      // 3. Adherence Calculations (Derived from real state)
+      const completed = state.tasks.filter(t => t.completed).length;
+      const total = state.tasks.length;
+      const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+      document.getElementById('dash-task-pct').textContent = `${pct}%`;
+      document.getElementById('dash-task-fill').style.width = `${pct}%`;
+      document.getElementById('dash-task-counts').textContent = `${completed} of ${total} tasks completed`;
+
+      // 4. Follow-up Appointments
+      const appointments = state.tasks.filter(t => t.type === 'appointment' || !t.type);
+      document.getElementById('dash-apt-badge').textContent = `${appointments.length} Scheduled`;
+      const aptList = document.getElementById('dash-appointments-list');
+      aptList.innerHTML = '';
+      if (appointments.length === 0) {
+        aptList.innerHTML = '<p class="text-xs text-slate-400 py-2">No upcoming appointments scheduled.</p>';
+      } else {
+        appointments.slice(0, 2).forEach(apt => {
+          const div = document.createElement('div');
+          div.className = 'p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1';
+          div.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-800">${escapeHtml(apt.title)}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-100 text-primary font-bold">Upcoming</span>
+            </div>
+            <div class="text-[11px] text-slate-500">${escapeHtml(apt.date_time)}</div>
+          `;
+          aptList.appendChild(div);
+        });
+      }
+    }
+
+    function viewDocumentSummary(docId) {
+      const doc = state.documents.find(d => d.id === docId);
+      if (doc && doc.analysis) {
+        state.currentDocumentAnalysis = doc.analysis;
+        renderDischargeSummary(doc.analysis);
+        navigateTo('summary');
+      }
+    }
+
+    // ----------------------------------------------------
+    // Documents & Intake Workflow (Extract -> Review -> Analyze)
+    // ----------------------------------------------------
+    function switchIntakeMode(mode) {
+      state.intake.mode = mode;
+      const btnPdf = document.getElementById('intake-tab-pdf');
+      const btnText = document.getElementById('intake-tab-text');
+      const boxPdf = document.getElementById('intake-mode-pdf');
+      const boxText = document.getElementById('intake-mode-text');
+
+      if (mode === 'pdf') {
+        btnPdf.className = 'px-3 py-1 rounded-lg bg-white text-primary font-bold shadow-xs transition-all';
+        btnText.className = 'px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+        boxPdf.classList.remove('hidden');
+        boxText.classList.add('hidden');
+      } else {
+        btnText.className = 'px-3 py-1 rounded-lg bg-white text-primary font-bold shadow-xs transition-all';
+        btnPdf.className = 'px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+        boxText.classList.remove('hidden');
+        boxPdf.classList.add('hidden');
+      }
+    }
+
+    async function handleIntakeFileSelected(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      state.intake.file = file;
+      state.intake.filename = file.name;
+      document.getElementById('intake-selected-filename').textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      document.getElementById('intake-error-box').classList.add('hidden');
+
+      // 1. Client-side normalized duplicate check
+      let dupCheck = checkClientDuplicate(file.name);
+
+      // 2. Authoritative backend duplicate check if user is authenticated
+      if (state.token) {
+        try {
+          const res = await fetch('/api/documents/check-duplicate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${state.token}`
+            },
+            body: JSON.stringify({ filename: file.name })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.is_duplicate) {
+              dupCheck = {
+                isDuplicate: true,
+                type: data.duplicate_type,
+                message: data.message,
+                existingDoc: {
+                  id: data.existing_document_id,
+                  filename: data.existing_filename,
+                  uploaded_at: data.existing_upload_date
+                }
+              };
+            }
+          }
+        } catch (err) {
+          console.warn('Backend duplicate check fallback to client:', err);
+        }
+      }
+
+      const exactCard = document.getElementById('intake-exact-duplicate-card');
+      const potentialCard = document.getElementById('intake-potential-duplicate-card');
+      const selectedBadge = document.getElementById('intake-selected-badge');
+      const proceedBtn = document.getElementById('btn-extract-proceed');
+
+      if (dupCheck.isDuplicate && dupCheck.type === 'exact') {
+        // Prevent accidental upload
+        selectedBadge.classList.add('hidden');
+        potentialCard.classList.add('hidden');
+        exactCard.classList.remove('hidden');
+        proceedBtn.disabled = true;
+
+        document.getElementById('exact-dup-filename').textContent = dupCheck.existingDoc.filename || 'Existing Document';
+        document.getElementById('exact-dup-date').textContent = dupCheck.existingDoc.uploaded_at || 'Previously uploaded';
+
+        // Wire View Existing Document button
+        document.getElementById('btn-view-existing-doc').onclick = () => {
+          viewDocumentSummary(dupCheck.existingDoc.id);
+        };
+      } else if (dupCheck.isDuplicate && dupCheck.type === 'potential') {
+        // Show potential duplicate warning
+        exactCard.classList.add('hidden');
+        selectedBadge.classList.remove('hidden');
+        potentialCard.classList.remove('hidden');
+        proceedBtn.disabled = true;
+
+        document.getElementById('potential-dup-desc').textContent = 
+          `This file looks similar to '${dupCheck.existingDoc.filename}' uploaded on ${dupCheck.existingDoc.uploaded_at}. Do you want to continue?`;
+      } else {
+        // No duplicate found
+        exactCard.classList.add('hidden');
+        potentialCard.classList.add('hidden');
+        selectedBadge.classList.remove('hidden');
+        proceedBtn.disabled = false;
+      }
+    }
+
+    function confirmPotentialDuplicate() {
+      document.getElementById('intake-potential-duplicate-card').classList.add('hidden');
+      document.getElementById('btn-extract-proceed').disabled = false;
+      showToast('Potential duplicate confirmed. Proceeding with upload.');
+    }
+
+    function clearIntakeFile() {
+      state.intake.file = null;
+      document.getElementById('intake-file-input').value = '';
+      document.getElementById('intake-selected-badge').classList.add('hidden');
+      document.getElementById('intake-exact-duplicate-card').classList.add('hidden');
+      document.getElementById('intake-potential-duplicate-card').classList.add('hidden');
+      document.getElementById('btn-extract-proceed').disabled = false;
+    }
+
+    async function proceedToReviewStep() {
+      const errorBox = document.getElementById('intake-error-box');
+      const errorText = document.getElementById('intake-error-text');
+      errorBox.classList.add('hidden');
+
+      const pasteText = document.getElementById('intake-paste-area').value.trim();
+
+      if (state.intake.mode === 'pdf' && !state.intake.file) {
+        errorText.textContent = 'Please select a PDF or text file to extract.';
+        errorBox.classList.remove('hidden');
+        return;
+      }
+      if (state.intake.mode === 'text' && pasteText.length < 20) {
+        errorText.textContent = 'Please enter at least 20 characters of discharge instructions.';
+        errorBox.classList.remove('hidden');
+        return;
+      }
+
+      // Call extraction endpoint
+      const formData = new FormData();
+      if (state.intake.mode === 'pdf' && state.intake.file) {
+        formData.append('file', state.intake.file);
+      } else {
+        formData.append('text', pasteText);
+      }
+
+      const btn = document.getElementById('btn-extract-proceed');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Extracting Text...</span>';
+
+      try {
+        const res = await fetch('/api/documents/extract', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Extraction failed.');
+
+        state.intake.extractedText = data.extracted_text;
+        state.intake.filename = data.filename || 'discharge_summary.pdf';
+
+        // Transition to Review Step
+        document.getElementById('intake-step-upload').classList.add('hidden');
+        document.getElementById('intake-step-review').classList.remove('hidden');
+        document.getElementById('review-stats-badge').textContent = `${data.page_count} page(s) • ${data.char_count} characters`;
+        document.getElementById('review-editable-text').value = data.extracted_text;
+        document.getElementById('review-target-lang').value = state.currentLanguage;
+
+        showToast('Text extracted successfully. Please review before AI analysis.');
+      } catch (err) {
+        errorText.textContent = err.message;
+        errorBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Extract &amp; Review Text</span><span class="material-symbols-outlined text-sm">arrow_forward</span>';
+      }
+    }
+
+    function cancelReviewStep() {
+      document.getElementById('intake-step-review').classList.add('hidden');
+      document.getElementById('intake-step-upload').classList.remove('hidden');
+    }
+
+    async function triggerAiAnalysis() {
+      const reviewedText = document.getElementById('review-editable-text').value.trim();
+      const targetLang = document.getElementById('review-target-lang').value;
+
+      if (reviewedText.length < 20) {
+        showToast('Text is too short to analyze.');
+        return;
+      }
+
+      showProcessingOverlay();
+
+      try {
+        const formData = new FormData();
+        formData.append('text', reviewedText);
+        formData.append('language', targetLang);
+        formData.append('filename', state.intake.filename || 'discharge_document.pdf');
+
+        const headers = {};
+        if (state.token) {
+          headers['Authorization'] = `Bearer ${state.token}`;
+        }
+
+        const res = await fetch('/api/documents/analyze', {
+          method: 'POST',
+          headers: headers,
+          body: formData
+        });
+        const analysis = await res.json();
+        if (!res.ok) throw new Error(analysis.detail || 'Analysis service failed.');
+
+        hideProcessingOverlay();
+
+        // Refresh user documents and tasks
+        await loadUserData();
+
+        state.currentDocumentAnalysis = analysis;
+        renderDischargeSummary(analysis);
+        cancelReviewStep();
+        navigateTo('summary');
+        showToast('Discharge summary analyzed and saved.');
+      } catch (err) {
+        hideProcessingOverlay();
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadSampleIntoIntake() {
+      try {
+        const res = await fetch('/api/sample-text');
+        const data = await res.json();
+        switchIntakeMode('text');
+        document.getElementById('intake-paste-area').value = data.text;
+        showToast('Synthetic sample discharge text loaded.');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderDocumentsView() {
+      const historyList = document.getElementById('docs-history-list');
+      historyList.innerHTML = '';
+
+      if (state.documents.length === 0) {
+        historyList.innerHTML = '<p class="text-xs text-slate-400 py-3">No processed documents yet.</p>';
+        return;
+      }
+
+      state.documents.forEach(doc => {
+        const div = document.createElement('div');
+        div.className = 'p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-slate-100/60';
+        div.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-teal-100 text-primary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-xl">description</span>
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-xs font-bold text-slate-900 truncate" title="${escapeHtml(doc.filename || doc.title)}">${escapeHtml(doc.title || doc.filename)}</h4>
+              <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate max-w-xs sm:max-w-md" title="${escapeHtml(doc.filename || 'uploaded_doc.pdf')}">${escapeHtml(doc.filename || 'uploaded_doc.pdf')}</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(doc.uploaded_at)} • Status: <span class="text-emerald-700 font-semibold">${escapeHtml(doc.status)}</span></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+            <button onclick="viewDocumentSummary('${doc.id}')" class="py-1.5 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:text-primary hover:border-primary transition-colors flex items-center gap-1 shadow-xs" title="Open Summary">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+              <span>Open Summary</span>
+            </button>
+            <button onclick="openDeleteModal('${doc.id}')" class="py-1.5 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors flex items-center gap-1 shadow-xs" title="Remove Document">
+              <span class="material-symbols-outlined text-sm text-red-500">delete</span>
+              <span>Remove</span>
+            </button>
+          </div>
+        `;
+        historyList.appendChild(div);
+      });
+    }
+
+    // Document Removal Dialog Controls
+    function openDeleteModal(docId) {
+      const doc = state.documents.find(d => d.id === docId);
+      if (!doc) return;
+
+      state.pendingDeleteDocId = docId;
+      document.getElementById('delete-modal-filename').textContent = doc.filename || doc.title || 'Discharge Document';
+      document.getElementById('modal-confirm-delete').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      state.pendingDeleteDocId = null;
+      document.getElementById('modal-confirm-delete').classList.add('hidden');
+    }
+
+    async function confirmDocumentDeletion() {
+      const docId = state.pendingDeleteDocId;
+      if (!docId) return;
+
+      const btn = document.getElementById('btn-confirm-delete-doc');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Removing...</span>';
+
+      try {
+        const res = await fetch(`/api/user/documents/${docId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${state.token}`
+          }
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || 'Failed to remove document.');
+        }
+
+        const currentRemovedDoc = state.documents.find(d => d.id === docId);
+        const removedFilename = currentRemovedDoc ? (currentRemovedDoc.filename || currentRemovedDoc.title) : 'Document';
+
+        closeDeleteModal();
+
+        // If the removed document was currently viewed in Summary, reset or switch
+        if (state.currentDocumentAnalysis) {
+          if (currentRemovedDoc && currentRemovedDoc.analysis === state.currentDocumentAnalysis) {
+            const remaining = state.documents.filter(d => d.id !== docId);
+            state.currentDocumentAnalysis = remaining.length > 0 ? remaining[0].analysis : null;
+          }
+        }
+
+        // Reload user documents & tasks from single source of truth
+        await loadUserData();
+        showToast(`Document '${removedFilename}' and associated care tasks removed.`);
+      } catch (err) {
+        closeDeleteModal();
+        showToast(`Error: ${err.message || 'Unable to delete document. Please try again.'}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-sm">delete_forever</span><span>Remove Document</span>';
+      }
+    }
+
+    // ----------------------------------------------------
+    // Discharge Summary Results Rendering
+    // ----------------------------------------------------
+    function renderDischargeSummary(data) {
+      if (!data) return;
+      const p = data.patient_info || {};
+
+      document.getElementById('sum-doc-title').textContent = p.procedure_or_diagnosis ? `${p.procedure_or_diagnosis} Summary` : 'Discharge Summary & Rx';
+      document.getElementById('sum-facility').textContent = p.hospital_name || 'Hospital Documentation';
+      document.getElementById('sum-record-no').textContent = p.record_number || '#REC-01';
+      document.getElementById('sum-patient-name').textContent = p.patient_name || state.user.name;
+      document.getElementById('sum-attending').textContent = p.attending_physician || 'Attending Physician';
+      document.getElementById('sum-date').textContent = p.discharge_date || 'Recent';
+      document.getElementById('sum-procedure').textContent = p.procedure_or_diagnosis || 'Post-Op';
+      document.getElementById('sum-plain-body').textContent = data.summary || 'Summary unavailable.';
+
+      // Milestone chips
+      const mContainer = document.getElementById('sum-milestones-container');
+      mContainer.innerHTML = '';
+      (data.recovery_milestones || ['Keep dressing dry', 'Elevate limb', 'Follow medication times']).forEach(m => {
+        const chip = document.createElement('div');
+        chip.className = 'px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs flex items-center gap-1.5';
+        chip.innerHTML = `<span class="material-symbols-outlined text-teal-600 text-sm">check</span><span>${escapeHtml(m)}</span>`;
+        mContainer.appendChild(chip);
+      });
+
+      // Medication Split Cards
+      const medsList = document.getElementById('sum-medications-list');
+      medsList.innerHTML = '';
+      const meds = data.medication_instructions || [];
+      document.getElementById('sum-meds-count').textContent = `${meds.length} Active Prescriptions`;
+
+      meds.forEach(med => {
+        const card = document.createElement('div');
+        card.className = 'p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-3';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-teal-50 text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">medication</span>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">${escapeHtml(med.name)}</h4>
+                <span class="text-xs text-slate-500">${escapeHtml(med.dosage)} • ${escapeHtml(med.route || 'Oral')} • ${escapeHtml(med.frequency)}</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-primary">
+              ${escapeHtml(med.purpose || 'Prescribed Course')}
+            </span>
+          </div>
+
+          <!-- Original Verbatim Doctor's Order -->
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Original Doctor's Order (Verbatim)</span>
+            <p class="font-mono text-slate-800 bg-white p-2 rounded-lg border border-slate-200">
+              “${escapeHtml(med.verbatim_order || `${med.name} ${med.dosage}. Take as directed.`)}”
+            </p>
+          </div>
+
+          <!-- AI Patient Explanation -->
+          <div class="p-3 rounded-xl bg-teal-50/60 border border-teal-200/80 text-xs space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-primary block">What This Means For You</span>
+            <p class="text-slate-800 font-medium leading-relaxed">
+              ${escapeHtml(med.patient_explanation || 'Follow prescribed timing precisely.')}
+            </p>
+            ${med.tips_or_warnings ? `
+              <p class="text-slate-600 pt-1 text-[11px] font-normal">
+                <strong>Safety tip:</strong> ${escapeHtml(med.tips_or_warnings)}
+              </p>
+            ` : ''}
+          </div>
+        `;
+        medsList.appendChild(card);
+      });
+
+      // Ambiguous / Missing items
+      const ambigCard = document.getElementById('sum-ambiguity-card');
+      const ambigList = document.getElementById('sum-ambiguity-list');
+      ambigList.innerHTML = '';
+      if (data.missing_or_ambiguous_information && data.missing_or_ambiguous_information.length > 0) {
+        ambigCard.classList.remove('hidden');
+        data.missing_or_ambiguous_information.forEach(it => {
+          const li = document.createElement('li');
+          li.textContent = it;
+          ambigList.appendChild(li);
+        });
+      } else {
+        ambigCard.classList.add('hidden');
+      }
+
+      // Warning signs
+      const wList = document.getElementById('sum-warnings-list');
+      wList.innerHTML = '';
+      (data.source_warning_signs || []).forEach(w => {
+        const div = document.createElement('div');
+        div.className = 'p-3 rounded-xl bg-white border border-red-200 flex items-start justify-between gap-3 text-xs';
+        div.innerHTML = `
+          <div class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-red-600 text-base mt-0.5">warning</span>
+            <span class="font-medium text-slate-800">${escapeHtml(w.sign)}</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 shrink-0">
+            ${escapeHtml(w.severity || 'Urgent')}
+          </span>
+        `;
+        wList.appendChild(div);
+      });
+    }
+
+    // ----------------------------------------------------
+    // My Care View & Task Filtering
+    // ----------------------------------------------------
+    function filterCareTasks(filter) {
+      state.careFilter = filter;
+      document.querySelectorAll('.care-filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-filter') === filter) {
+          btn.className = 'care-filter-btn px-3 py-1 rounded-lg bg-primary text-white shadow-xs';
+        } else {
+          btn.className = 'care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900';
+        }
+      });
+      renderCareTasks();
+    }
+
+    function renderCareTasks() {
+      const container = document.getElementById('care-tasks-list');
+      const emptyState = document.getElementById('care-empty-state');
+      const celebration = document.getElementById('care-celebration-banner');
+      container.innerHTML = '';
+
+      if (state.tasks.length === 0) {
+        emptyState.classList.remove('hidden');
+        celebration.classList.add('hidden');
+        document.getElementById('care-header-count').textContent = '0 of 0 tasks completed';
+        document.getElementById('care-header-pct').textContent = '0%';
+        document.getElementById('care-main-fill').style.width = '0%';
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      const completedCount = state.tasks.filter(t => t.completed).length;
+      const totalCount = state.tasks.length;
+      const pct = Math.round((completedCount / totalCount) * 100);
+
+      document.getElementById('care-header-count').textContent = `${completedCount} of ${totalCount} tasks completed`;
+      document.getElementById('care-header-pct').textContent = `${pct}%`;
+      document.getElementById('care-main-fill').style.width = `${pct}%`;
+
+      if (completedCount === totalCount) {
+        celebration.classList.remove('hidden');
+      } else {
+        celebration.classList.add('hidden');
+      }
+
+      let filtered = state.tasks;
+      if (state.careFilter === 'pending') {
+        filtered = state.tasks.filter(t => !t.completed);
+      } else if (state.careFilter === 'completed') {
+        filtered = state.tasks.filter(t => t.completed);
+      }
+
+      filtered.forEach(task => {
+        const div = document.createElement('div');
+        div.className = `p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-start gap-3 transition-all ${task.completed ? 'opacity-70 bg-slate-50' : ''}`;
+        div.innerHTML = `
+          <button onclick="toggleTask('${task.id}')" class="mt-0.5 w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-all ${task.completed ? 'bg-secondary text-white' : 'border border-slate-300 hover:border-primary text-transparent'}">
+            <span class="material-symbols-outlined text-sm">check</span>
+          </button>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-baseline justify-between gap-2">
+              <span class="text-xs font-bold ${task.completed ? 'line-through text-slate-400' : 'text-slate-900'}">${escapeHtml(task.title)}</span>
+              <span class="text-[11px] text-slate-400 shrink-0 font-medium">${escapeHtml(task.date_time)}</span>
+            </div>
+            ${task.instructions ? `
+              <p class="text-xs text-slate-500 mt-1">${escapeHtml(task.instructions)}</p>
+            ` : ''}
+            ${task.provider ? `
+              <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">${escapeHtml(task.provider)}</span>
+            ` : ''}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function toggleTask(taskId) {
+      if (!state.token) return;
+
+      try {
+        const res = await fetch(`/api/user/tasks/${taskId}/toggle`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          state.tasks = data.tasks;
+          renderCareTasks();
+          renderDashboard();
+          showToast('Care task updated.');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // ----------------------------------------------------
+    // Language & Preference Handling
+    // ----------------------------------------------------
+    async function setAppLanguage(lang, notify = true) {
+      state.currentLanguage = lang;
+
+      // Update active styling on sidebar buttons
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        if (btn.getAttribute('data-lang') === lang) {
+          btn.className = 'lang-btn py-1 rounded-lg font-bold text-center transition-all bg-white text-primary shadow-sm';
+        } else {
+          btn.className = 'lang-btn py-1 rounded-lg text-slate-600 hover:text-slate-900 font-medium text-center transition-all';
+        }
+      });
+
+      // If viewing synthetic demo, reload localized sample
+      if (state.user && state.user.is_demo) {
+        try {
+          const res = await fetch(`/api/sample?lang=${lang}`);
+          if (res.ok) {
+            const data = await res.json();
+            state.currentDocumentAnalysis = data;
+            renderDischargeSummary(data);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      if (notify) {
+        showToast(`Language switched to ${lang === 'hi' ? 'Hindi (हिन्दी)' : lang === 'bn' ? 'Bengali (বাংলা)' : 'English'}`);
+      }
+    }
+
+    async function saveProfilePreferences() {
+      const name = document.getElementById('pref-display-name').value.trim();
+      const preferred_language = document.getElementById('pref-language').value;
+
+      try {
+        const res = await fetch('/api/user/profile', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${state.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, preferred_language })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          state.user = data.user;
+          state.currentLanguage = preferred_language;
+          renderAppShell();
+          showToast('Profile preferences updated.');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // ----------------------------------------------------
+    // Comfort & Pain Score
+    // ----------------------------------------------------
+    function setPainScore(score) {
+      document.querySelectorAll('.pain-chip').forEach((c, idx) => {
+        if (idx + 1 === score) {
+          c.className = 'pain-chip w-9 h-9 rounded-xl bg-primary text-white text-xs font-bold shadow-sm';
+        } else {
+          c.className = 'pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors';
+        }
+      });
+
+      const notes = {
+        1: 'Minimal discomfort. Keep resting comfortably.',
+        2: 'Manageable comfort level.',
+        3: 'Moderate discomfort. Keep leg elevated above heart level and apply cold pack.',
+        4: 'Noticeable discomfort. Take prescribed pain reliever as directed.',
+        5: 'Elevate limb, rest in neutral extension, apply ice for 20 minutes.',
+        6: 'Moderate-to-high pain. Consider scheduled medication.',
+        7: 'Substantial pain. Ensure you are resting with limb elevated.',
+        8: 'Persistent severe pain. Contact clinic triage if medication does not help.',
+        9: 'Severe pain. Contact orthopedic triage immediately.',
+        10: 'Unbearable pain. Please seek immediate medical attention.'
+      };
+      document.getElementById('pain-feedback-text').textContent = `Score ${score}: ${notes[score]}`;
+    }
+
+    // ----------------------------------------------------
+    // Processing Overlay & Toast Helpers
+    // ----------------------------------------------------
+    function showProcessingOverlay() {
+      const overlay = document.getElementById('processing-overlay');
+      overlay.classList.remove('hidden');
+      let pct = 25;
+      const bar = document.getElementById('proc-bar');
+      const text = document.getElementById('proc-pct');
+      window.procInterval = setInterval(() => {
+        if (pct < 90) {
+          pct += Math.floor(Math.random() * 10) + 5;
+          if (pct > 90) pct = 90;
+          bar.style.width = `${pct}%`;
+          text.textContent = `${pct}%`;
+        }
+      }, 250);
+    }
+
+    function hideProcessingOverlay() {
+      if (window.procInterval) clearInterval(window.procInterval);
+      document.getElementById('proc-bar').style.width = '100%';
+      document.getElementById('proc-pct').textContent = '100%';
+      setTimeout(() => {
+        document.getElementById('processing-overlay').classList.add('hidden');
+      }, 300);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('global-toast');
+      document.getElementById('toast-text').textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
