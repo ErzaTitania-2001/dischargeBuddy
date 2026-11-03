@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+.env
+.pytest_cache
+tests
+stitch_dischargebuddy_ai_healthcare_app
