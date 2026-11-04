@@ -30,12 +30,12 @@ class WarningSign(BaseModel):
     action: str = Field(..., description="Required patient action (e.g., Call triage nurse immediately)")
 
 class PatientMetadata(BaseModel):
-    patient_name: str = Field("Sarah Jenkins", description="Patient name if documented")
-    hospital_name: str = Field("St. Jude Memorial Hospital", description="Hospital name")
-    record_number: str = Field("#SJM-84920", description="MRN or Document ID")
-    attending_physician: str = Field("Dr. Robert Chen, MD", description="Attending physician")
-    discharge_date: str = Field("Oct 24, 2024", description="Date of discharge")
-    procedure_or_diagnosis: str = Field("Right Knee Arthroscopy", description="Procedure or primary diagnosis")
+    patient_name: str = Field("Not specified in discharge summary", description="Patient name if documented")
+    hospital_name: str = Field("Not specified in discharge summary", description="Hospital name")
+    record_number: str = Field("Not specified in discharge summary", description="MRN or Document ID")
+    attending_physician: str = Field("Not specified in discharge summary", description="Attending physician")
+    discharge_date: str = Field("Not specified in discharge summary", description="Date of discharge")
+    procedure_or_diagnosis: str = Field("Not specified in discharge summary", description="Procedure or primary diagnosis")
 
 class DischargeAnalysisResponse(BaseModel):
     patient_info: PatientMetadata = Field(default_factory=PatientMetadata)

@@ -12,7 +12,7 @@ def test_health_endpoint():
     data = response.json()
     assert data["status"] == "healthy"
     assert data["service"] == "DischargeBuddy"
-    assert "gemini_configured" in data
+    assert "meta_spark_configured" in data
 
 def test_auth_registration_and_isolation():
     reg_res = client.post("/api/auth/register", json={

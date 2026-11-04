@@ -360,14 +360,36 @@
             </div>
           </div>
 
+          <div id="dash-overview" class="hidden space-y-5">
+            <h2 class="text-xl font-bold text-slate-900" data-i18n="overview">Today's Recovery Overview</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <article class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div class="flex items-center justify-between"><h3 class="font-bold text-slate-900" data-i18n="medicines">My Medicines</h3><span id="dash-meds-count" class="text-xs text-primary font-bold"></span></div>
+                <div id="dash-medicines" class="mt-3 space-y-3"></div>
+                <button onclick="navigateTo('summary')" class="mt-4 text-xs font-bold text-primary hover:underline" data-i18n="med_schedule">View complete medication schedule →</button>
+              </article>
+              <article class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div class="flex items-center justify-between"><h3 class="font-bold text-slate-900" data-i18n="consultation">Next Consultation</h3><button onclick="navigateTo('care')" class="text-xs font-bold text-primary hover:underline" data-i18n="view_followup">View follow-up</button></div>
+                <div id="dash-next-consultation" class="mt-3"></div>
+              </article>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <article class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
+                <div class="flex items-center justify-between"><h3 class="font-bold text-slate-900" data-i18n="checklist">Care Checklist</h3><button onclick="navigateTo('care')" class="text-xs font-bold text-primary hover:underline" data-i18n="view_all">View all</button></div>
+                <div class="mt-3"><div class="flex justify-between text-xs text-slate-500"><span id="dash-checklist-progress">No care tasks recorded</span><span id="dash-checklist-pct"></span></div><div class="mt-2 h-2 rounded-full bg-slate-100"><div id="dash-checklist-fill" class="h-2 rounded-full bg-secondary" style="width:0%"></div></div></div>
+                <div id="dash-today-tasks" class="mt-3 space-y-2"></div>
+              </article>
+              <article class="bg-red-50/70 rounded-2xl border border-red-200 p-5 shadow-xs"><h3 class="font-bold text-slate-900" data-i18n="important_care">Important Care Instructions</h3><div id="dash-warning-signs" class="mt-3 space-y-3"></div></article>
+            </div>
+          </div>
+
           <!-- RETURNING USER DASHBOARD GRID (Fluid 2-Column Desktop Layout) -->
           <div id="dash-active-content" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <!-- LEFT MAIN COLUMN (2/3 Width) -->
             <div class="lg:col-span-2 space-y-6">
               
-              <!-- Next Action Card -->
-              <div class="bg-gradient-to-r from-teal-50/80 to-white rounded-2xl border border-teal-200/70 p-5 shadow-xs flex items-start gap-4">
+              <div class="hidden bg-gradient-to-r from-teal-50/80 to-white rounded-2xl border border-teal-200/70 p-5 shadow-xs flex items-start gap-4">
                 <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
                   <span class="material-symbols-outlined text-xl">schedule</span>
                 </div>
@@ -385,7 +407,7 @@
               </div>
 
               <!-- Recent Discharge Documents Section -->
-              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+              <div class="hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Recent Discharge Documents</h3>
                   <button onclick="navigateTo('documents')" class="text-xs text-primary font-semibold hover:underline">Manage All</button>
@@ -397,7 +419,7 @@
               </div>
 
               <!-- Daily Comfort / Self-Report Widget -->
-              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+              <div class="hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-bold text-slate-900">Daily Pain &amp; Comfort Tracker</h3>
                   <span class="text-xs text-slate-400 font-medium">Self-Report</span>
@@ -950,7 +972,7 @@
         </div>
         <div class="flex items-center gap-2 text-primary font-bold">
           <span class="material-symbols-outlined text-base animate-spin">progress_activity</span>
-          <span>3. Gemini Plain-Language Synthesis</span>
+          <span>3. Muse Spark Plain-Language Synthesis</span>
         </div>
         <div class="flex items-center gap-2 text-slate-400">
           <span class="material-symbols-outlined text-base">radio_button_unchecked</span>
@@ -1416,11 +1438,66 @@
       if (state.documents.length === 0 && state.tasks.length === 0) {
         emptyState.classList.remove('hidden');
         activeContent.classList.add('hidden');
+        document.getElementById('dash-overview').classList.add('hidden');
         return;
       }
 
       emptyState.classList.add('hidden');
       activeContent.classList.remove('hidden');
+      document.getElementById('dash-overview').classList.remove('hidden');
+
+      const analysis = (state.documents[0] && state.documents[0].analysis) || state.currentDocumentAnalysis;
+      const meds = analysis && Array.isArray(analysis.medication_instructions) ? analysis.medication_instructions : [];
+      document.getElementById('dash-meds-count').textContent = `${meds.length} prescribed`;
+      const medsBox = document.getElementById('dash-medicines');
+      medsBox.innerHTML = '';
+      if (!analysis) {
+        medsBox.innerHTML = '<p class="text-sm text-slate-500">Unable to extract — please verify the original document.</p>';
+      } else if (!meds.length) {
+        medsBox.innerHTML = '<p class="text-sm text-slate-500">No medicines were listed in the discharge summary.</p>';
+      } else {
+        meds.slice(0, 4).forEach(med => {
+          const item = document.createElement('div');
+          item.className = 'rounded-xl bg-slate-50 border border-slate-100 p-3';
+          const missing = 'Not specified in discharge summary';
+          item.innerHTML = `<h4 class="text-sm font-bold text-slate-900">${escapeHtml(med.name || missing)} · ${escapeHtml(med.dosage || missing)}</h4><p class="text-xs text-slate-600 mt-1">${escapeHtml(med.route || missing)} · ${escapeHtml(med.frequency || missing)}</p><p class="text-xs text-slate-600 mt-1">Duration: ${escapeHtml(med.duration || missing)}</p><p class="text-xs text-slate-600 mt-1">Instructions: ${escapeHtml(med.verbatim_order || med.patient_explanation || missing)}</p>${med.tips_or_warnings ? `<p class="text-xs text-slate-600 mt-1">${escapeHtml(med.tips_or_warnings)}</p>` : ''}`;
+          medsBox.appendChild(item);
+        });
+      }
+
+      const appointmentsTop = state.tasks.filter(t => (t.type === 'appointment' || !t.type) && !t.completed);
+      const nextApt = appointmentsTop[0];
+      const aptBox = document.getElementById('dash-next-consultation');
+      if (!nextApt) {
+        aptBox.innerHTML = `<p class="text-sm text-slate-500">${analysis ? 'No follow-up consultation listed in the discharge summary.' : 'Unable to extract — please verify the original document.'}</p>`;
+      } else {
+        const date = Date.parse(nextApt.date_time);
+        const days = Number.isNaN(date) ? null : Math.ceil((date - Date.now()) / 86400000);
+        aptBox.innerHTML = `<p class="text-lg font-bold text-primary">${escapeHtml(nextApt.date_time || 'Not specified in discharge summary')}</p><p class="text-sm text-slate-700 mt-1">${escapeHtml(nextApt.title || '')}${nextApt.provider ? ` · ${escapeHtml(nextApt.provider)}` : ''}</p>${days !== null && days >= 0 ? `<p class="text-xs text-slate-500 mt-1">In ${days} day${days === 1 ? '' : 's'}</p>` : ''}${nextApt.instructions ? `<p class="text-xs text-slate-600 mt-2">${escapeHtml(nextApt.instructions)}</p>` : ''}`;
+      }
+
+      const completedToday = state.tasks.filter(t => t.completed).length;
+      const totalToday = state.tasks.length;
+      const checklistPct = totalToday ? Math.round(completedToday / totalToday * 100) : null;
+      document.getElementById('dash-checklist-progress').textContent = totalToday ? `${completedToday} of ${totalToday} tasks completed` : 'No care tasks recorded';
+      document.getElementById('dash-checklist-pct').textContent = checklistPct === null ? '' : `${checklistPct}%`;
+      document.getElementById('dash-checklist-fill').style.width = `${checklistPct || 0}%`;
+      const taskBox = document.getElementById('dash-today-tasks');
+      taskBox.innerHTML = '';
+      state.tasks.filter(t => t.type !== 'appointment').slice(0, 5).forEach(task => {
+        const row = document.createElement('div'); row.className = 'flex gap-2 text-sm text-slate-700';
+        row.innerHTML = `<span class="text-primary">${task.completed ? '✓' : '○'}</span><span class="${task.completed ? 'line-through text-slate-400' : ''}">${escapeHtml(task.title)}${task.instructions ? ` — ${escapeHtml(task.instructions)}` : ''}</span>`;
+        taskBox.appendChild(row);
+      });
+      if (!taskBox.childElementCount) taskBox.innerHTML = '<p class="text-sm text-slate-500">No care tasks listed in the discharge summary.</p>';
+
+      const warningBox = document.getElementById('dash-warning-signs'); warningBox.innerHTML = '';
+      const warnings = analysis && Array.isArray(analysis.source_warning_signs) ? analysis.source_warning_signs : [];
+      if (warnings.length) warnings.forEach(w => {
+        const row = document.createElement('div'); row.className = 'text-xs text-slate-700';
+        row.innerHTML = `<p class="font-semibold">${escapeHtml(w.sign)}</p>${w.action ? `<p class="mt-0.5">${escapeHtml(w.action)}</p>` : ''}`; warningBox.appendChild(row);
+      });
+      else warningBox.innerHTML = `<p class="text-sm text-slate-600">${analysis ? 'No warning signs listed in the discharge summary.' : 'Unable to extract — please verify the original document.'}</p>`;
 
       // 1. Next Action Banner
       const pendingTask = state.tasks.find(t => !t.completed);
@@ -1717,9 +1794,8 @@
         hideProcessingOverlay();
 
         // Refresh user documents and tasks
-        await loadUserData();
-
         state.currentDocumentAnalysis = analysis;
+        await loadUserData();
         renderDischargeSummary(analysis);
         cancelReviewStep();
         navigateTo('summary');
@@ -1860,7 +1936,7 @@
       // Milestone chips
       const mContainer = document.getElementById('sum-milestones-container');
       mContainer.innerHTML = '';
-      (data.recovery_milestones || ['Keep dressing dry', 'Elevate limb', 'Follow medication times']).forEach(m => {
+      (data.recovery_milestones || []).forEach(m => {
         const chip = document.createElement('div');
         chip.className = 'px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs flex items-center gap-1.5';
         chip.innerHTML = `<span class="material-symbols-outlined text-teal-600 text-sm">check</span><span>${escapeHtml(m)}</span>`;
@@ -1871,7 +1947,13 @@
       const medsList = document.getElementById('sum-medications-list');
       medsList.innerHTML = '';
       const meds = data.medication_instructions || [];
-      document.getElementById('sum-meds-count').textContent = `${meds.length} Active Prescriptions`;
+      document.getElementById('sum-meds-count').textContent = `${meds.length} Prescribed Medicines`;
+      if (!meds.length) {
+        const empty = document.createElement('p');
+        empty.className = 'p-4 rounded-xl bg-slate-50 text-sm text-slate-600';
+        empty.textContent = data.is_synthetic_demo ? 'No medicines were listed in this document.' : 'No medicines were extracted. Please verify the original document.';
+        medsList.appendChild(empty);
+      }
 
       meds.forEach(med => {
         const card = document.createElement('div');
@@ -1884,11 +1966,11 @@
               </div>
               <div>
                 <h4 class="text-sm font-bold text-slate-900">${escapeHtml(med.name)}</h4>
-                <span class="text-xs text-slate-500">${escapeHtml(med.dosage)} • ${escapeHtml(med.route || 'Oral')} • ${escapeHtml(med.frequency)}</span>
+                <span class="text-xs text-slate-500">${escapeHtml(med.dosage || 'Not specified in discharge summary')} • ${escapeHtml(med.route || 'Not specified in discharge summary')} • ${escapeHtml(med.frequency || 'Not specified in discharge summary')}</span>
               </div>
             </div>
             <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-primary">
-              ${escapeHtml(med.purpose || 'Prescribed Course')}
+              ${escapeHtml(med.purpose || 'Not specified in discharge summary')}
             </span>
           </div>
 
@@ -1896,7 +1978,7 @@
           <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs space-y-1">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Original Doctor's Order (Verbatim)</span>
             <p class="font-mono text-slate-800 bg-white p-2 rounded-lg border border-slate-200">
-              “${escapeHtml(med.verbatim_order || `${med.name} ${med.dosage}. Take as directed.`)}”
+              ${escapeHtml(med.verbatim_order || 'Not specified in discharge summary')}
             </p>
           </div>
 
@@ -1904,7 +1986,7 @@
           <div class="p-3 rounded-xl bg-teal-50/60 border border-teal-200/80 text-xs space-y-1">
             <span class="text-[10px] font-bold uppercase tracking-wider text-primary block">What This Means For You</span>
             <p class="text-slate-800 font-medium leading-relaxed">
-              ${escapeHtml(med.patient_explanation || 'Follow prescribed timing precisely.')}
+              ${escapeHtml(med.patient_explanation || 'Not specified in discharge summary')}
             </p>
             ${med.tips_or_warnings ? `
               <p class="text-slate-600 pt-1 text-[11px] font-normal">
@@ -2053,6 +2135,13 @@
     async function setAppLanguage(lang, notify = true) {
       state.currentLanguage = lang;
 
+      const labels = {
+        en: { overview: "Today's Recovery Overview", medicines: 'My Medicines', med_schedule: 'View complete medication schedule →', consultation: 'Next Consultation', view_followup: 'View follow-up', checklist: 'Care Checklist', view_all: 'View all', important_care: 'Important Care Instructions' },
+        hi: { overview: 'आज की रिकवरी का सार', medicines: 'मेरी दवाइयाँ', med_schedule: 'दवाइयों का पूरा समय देखें →', consultation: 'अगली सलाह', view_followup: 'फॉलो-अप देखें', checklist: 'देखभाल सूची', view_all: 'सभी देखें', important_care: 'महत्वपूर्ण देखभाल निर्देश' },
+        bn: { overview: 'আজকের সুস্থতার সারাংশ', medicines: 'আমার ওষুধ', med_schedule: 'ওষুধের সম্পূর্ণ সময়সূচি দেখুন →', consultation: 'পরবর্তী পরামর্শ', view_followup: 'ফলো-আপ দেখুন', checklist: 'যত্নের তালিকা', view_all: 'সব দেখুন', important_care: 'গুরুত্বপূর্ণ যত্নের নির্দেশনা' }
+      };
+      document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = labels[lang]?.[el.dataset.i18n] || labels.en[el.dataset.i18n]; });
+
       // Update active styling on sidebar buttons
       document.querySelectorAll('.lang-btn').forEach(btn => {
         if (btn.getAttribute('data-lang') === lang) {
@@ -2070,6 +2159,7 @@
             const data = await res.json();
             state.currentDocumentAnalysis = data;
             renderDischargeSummary(data);
+            renderDashboard();
           }
         } catch (e) {
           console.error(e);

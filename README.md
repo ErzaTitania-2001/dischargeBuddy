@@ -2,7 +2,7 @@
 > **Your recovery, made simpler.**  
 > An AI-powered post-discharge healthcare companion translating complex hospital paperwork into clear, actionable recovery plans.
 
-Built for the Google AI Hackathon using Google Gemini 2.5 Flash, FastAPI, and Stitch-generated clinical design tokens.
+Built using Meta Muse Spark, FastAPI, and Stitch-generated clinical design tokens.
 
 ---
 
@@ -13,7 +13,7 @@ Built for the Google AI Hackathon using Google Gemini 2.5 Flash, FastAPI, and St
 - **Hospital Red-Flag Protocol:** Priority-tiered warning sign detection (Immediate ER, Call 911, Contact Surgeon) with 1-tap call triggers.
 - **Multilingual Support:** Instant translations in **English**, **Hindi (हिन्दी)**, and **Bengali (বাংলা)** while safeguarding clinical dosages and emergency numbers.
 - **Interactive Recovery Checklist:** Dynamic adherence tracking, progress bar, 30-second exercise guidance video modal, and refrigerator printable checklist.
-- **Dual Mode AI Engine:** Works live with **Gemini 2.5 Flash**, with automatic, high-fidelity synthetic fallback when running offline or without an API key.
+- **Meta Muse Spark:** Uses the configured Muse Spark API for document extraction. Synthetic clinical data is limited to the explicitly selected demo account; real document analysis errors are surfaced for verification.
 
 ---
 
@@ -22,13 +22,13 @@ Built for the Google AI Hackathon using Google Gemini 2.5 Flash, FastAPI, and St
 ### 1. Requirements
 - Python 3.10+ (or use the built-in `.venv` environment)
 
-### 2. Configure API Key (Optional)
-Copy `.env.example` to `.env` and add your Google Gemini API key:
+### 2. Configure API Key
+Copy `.env.example` to `.env` and add your Meta Model API key:
 ```bash
 cp .env.example .env
-# Set GEMINI_API_KEY=your_gemini_api_key
+# Set MODEL_API_KEY=your_meta_model_api_key
 ```
-*(Note: If no API key is provided, DischargeBuddy runs in demo mode with full interactive features using realistic synthetic data.)*
+Without an API key, use the explicitly labeled demo account for synthetic data. Real document analysis requires a configured Muse Spark API key.
 
 ### 3. Run the Server
 Launch the application with a single command:
@@ -71,7 +71,7 @@ gcloud run deploy dischargebuddy \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars GEMINI_API_KEY="YOUR_GEMINI_API_KEY",GEMINI_MODEL="gemini-2.5-flash"
+  --set-env-vars MODEL_API_KEY="YOUR_META_MODEL_API_KEY",MODEL_NAME="muse-spark-1.3",MODEL_API_BASE_URL="https://api.meta.ai/v1"
 ```
 
 Cloud Run will automatically build the container using the provided `Dockerfile` and serve it on a secure HTTPS URL.

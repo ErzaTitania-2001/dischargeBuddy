@@ -22,7 +22,7 @@ from app.models import (
     DeleteDocumentResponse
 )
 from app.services.pdf_service import extract_text_from_pdf
-from app.services.gemini_service import analyze_discharge_text
+from app.services.meta_spark_service import analyze_discharge_text
 from app.services.sample_data import get_sample_discharge_data, SAMPLE_DISCHARGE_TEXT
 from app.services.auth_service import user_store, User, DocumentRecord
 from app.services.duplicate_detector import check_for_duplicate
@@ -302,8 +302,18 @@ async def analyze_and_save_document(
     if lang_code not in ["en", "hi", "bn"]:
         lang_code = "en"
 
-    # Analyze via Gemini AI or synthetic demo
-    analysis: DischargeAnalysisResponse = analyze_discharge_text(text, language=lang_code)
+    # The demo account may use synthetic content when no model key is configured.
+    is_demo_sample = bool(user and user.is_demo and text.strip() == SAMPLE_DISCHARGE_TEXT.strip())
+    if is_demo_sample:
+        analysis = get_sample_discharge_data(lang_code)
+    elif not settings.MODEL_API_KEY.strip():
+        raise HTTPException(status_code=503, detail="Muse Spark is not configured. Please try again later or use demo mode.")
+    else:
+        try:
+            analysis = analyze_discharge_text(text, language=lang_code)
+        except Exception:
+            logger.exception("Muse Spark analysis failed")
+            raise HTTPException(status_code=502, detail="Unable to extract — please verify the original document and try again.")
 
     # If user is authenticated, persist in their user store
     if user:
@@ -332,14 +342,15 @@ async def analyze_and_save_document(
 @app.get("/api/health")
 async def health_check():
     """Service health and AI configuration status."""
-    has_key = bool(settings.GEMINI_API_KEY.strip())
+    has_key = bool(settings.MODEL_API_KEY.strip())
     return {
         "status": "healthy",
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
-        "ai_engine": "Gemini API" if has_key else "Synthetic Demo Fallback",
-        "gemini_configured": has_key,
-        "model": settings.GEMINI_MODEL if has_key else "None (demo mode)"
+        "ai_engine": "Muse Spark API" if has_key else "Synthetic Demo Fallback",
+        "model_configured": has_key,
+        "meta_spark_configured": has_key,
+        "model": settings.MODEL_NAME if has_key else "None (demo mode)"
     }
 
 @app.get("/api/sample")
@@ -388,7 +399,16 @@ async def analyze_document_legacy(
     else:
         raise HTTPException(status_code=400, detail="No document provided.")
 
-    analysis = analyze_discharge_text(content_to_analyze, language=lang_code)
+    if user and user.is_demo and content_to_analyze.strip() == SAMPLE_DISCHARGE_TEXT.strip():
+        analysis = get_sample_discharge_data(lang_code)
+    elif not settings.MODEL_API_KEY.strip():
+        raise HTTPException(status_code=503, detail="Muse Spark is not configured. Please try again later or use demo mode.")
+    else:
+        try:
+            analysis = analyze_discharge_text(content_to_analyze, language=lang_code)
+        except Exception:
+            logger.exception("Muse Spark analysis failed")
+            raise HTTPException(status_code=502, detail="Unable to extract — please verify the original document and try again.")
 
     if user:
         record = DocumentRecord(
