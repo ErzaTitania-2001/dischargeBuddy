@@ -5,9 +5,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-STATIC_DIR = Path(__file__).resolve().parent.parent / "app" / "static"
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
-pdf_path = STATIC_DIR / "sample_discharge_summary.pdf"
+FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
+FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
+pdf_path = FIXTURE_DIR / "sample_discharge_summary.pdf"
 
 doc = SimpleDocTemplate(
     str(pdf_path),

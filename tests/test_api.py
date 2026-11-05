@@ -1,10 +1,28 @@
 import io
-import pytest
+import uuid
+import os
+import tempfile
+from pathlib import Path
+from contextlib import contextmanager
+from unittest.mock import patch
 from fastapi.testclient import TestClient
+
+TEST_DATA_DIR = Path(tempfile.gettempdir()) / f"dischargebuddy-tests-{uuid.uuid4().hex}"
+os.environ["DATABASE_PATH"] = str(TEST_DATA_DIR / "test.sqlite3")
+os.environ["UPLOAD_DIR"] = str(TEST_DATA_DIR / "uploads")
+os.environ.pop("DATABASE_URL", None)
 from app.main import app
-from app.services.sample_data import SAMPLE_DISCHARGE_TEXT
+from tests.fixture_data import SAMPLE_DISCHARGE_TEXT, get_sample_discharge_data
 
 client = TestClient(app)
+
+@contextmanager
+def mock_muse_spark():
+    with patch("app.main.settings.MODEL_API_KEY", "test-key"), patch(
+        "app.main.analyze_discharge_text",
+        side_effect=lambda text, language="en": get_sample_discharge_data(language)
+    ):
+        yield
 
 def test_health_endpoint():
     response = client.get("/api/health")
@@ -23,8 +41,9 @@ def test_auth_registration_and_isolation():
     })
     assert reg_res.status_code == 200
     reg_data = reg_res.json()
-    assert "token" in reg_data
-    token = reg_data["token"]
+    assert "token" not in reg_data
+    token = reg_res.cookies.get("db_session")
+    assert token
     assert reg_data["user"]["name"] == "David Miller"
 
     docs_res = client.get("/api/user/documents", headers={"Authorization": f"Bearer {token}"})
@@ -51,7 +70,8 @@ def test_auth_login_success_and_failure():
         "password": "securepassword123"
     })
     assert login_res.status_code == 200
-    assert "token" in login_res.json()
+    assert "token" not in login_res.json()
+    assert login_res.cookies.get("db_session")
 
     fail_res = client.post("/api/auth/login", json={
         "email": "david.miller@example.com",
@@ -65,46 +85,105 @@ def test_demo_auth():
     demo_data = demo_res.json()
     assert demo_data["auth_mode"] == "demo"
     assert demo_data["user"]["is_demo"] is True
-    token = demo_data["token"]
+    token = demo_res.cookies.get("db_session")
 
     docs_res = client.get("/api/user/documents", headers={"Authorization": f"Bearer {token}"})
     assert docs_res.status_code == 200
-    assert len(docs_res.json()["documents"]) >= 1
+    assert len(docs_res.json()["documents"]) == 0
 
     tasks_res = client.get("/api/user/tasks", headers={"Authorization": f"Bearer {token}"})
     assert tasks_res.status_code == 200
-    assert len(tasks_res.json()["tasks"]) >= 1
+    assert len(tasks_res.json()["tasks"]) == 0
+
+def test_auth_refresh_keeps_a_live_session_and_rejects_revoked_tokens():
+    demo_res = client.post("/api/auth/demo")
+    token = demo_res.cookies.get("db_session")
+    refreshed = client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {token}"})
+    assert refreshed.status_code == 200
+    assert refreshed.cookies.get("db_session")
+    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).status_code == 200
+
+    client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
+    rejected = client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {token}"})
+    assert rejected.status_code == 401
+
+def test_auth_refresh_rejects_unknown_token():
+    rejected = client.post("/api/auth/refresh", headers={"Authorization": "Bearer sess-expired"})
+    assert rejected.status_code == 401
+
+def test_analysis_waits_for_explicit_review_confirmation():
+    suffix = uuid.uuid4().hex
+    auth = client.post("/api/auth/register", json={
+        "name": "Review Patient", "email": f"review-{suffix}@example.test", "password": "password123"
+    }).json()
+    headers = {"Authorization": f"Bearer {client.cookies.get('db_session')}"}
+    with mock_muse_spark():
+        pending = client.post("/api/documents/analyze", data={
+            "text": SAMPLE_DISCHARGE_TEXT, "confirm": "false"
+        }, headers=headers)
+    assert pending.status_code == 200
+    pending_data = pending.json()
+    assert pending_data["review_id"]
+    assert len(client.get("/api/user/documents", headers=headers).json()["documents"]) == 1
+
+    confirmed = client.post("/api/user/documents/confirm-review", json={
+        "review_id": pending_data["review_id"],
+        "additions": [{"section": "Patient note", "value": "Patient-entered note"}]
+    }, headers=headers)
+    assert confirmed.status_code == 200
+    saved = client.get("/api/user/documents", headers=headers).json()["documents"]
+    assert len(saved) == 1
+    assert "Added by you" in saved[0]["analysis"]["user_added_information"][0]["value"]
 
 def test_document_extract_and_review_flow():
+    demo_res = client.post("/api/auth/demo")
+    token = demo_res.cookies.get("db_session")
     extract_res = client.post(
         "/api/documents/extract",
-        data={"text": SAMPLE_DISCHARGE_TEXT}
+        data={"text": SAMPLE_DISCHARGE_TEXT}, headers={"Authorization": f"Bearer {token}"}
     )
     assert extract_res.status_code == 200
     ext_data = extract_res.json()
     assert ext_data["char_count"] > 100
     assert "ST. JUDE" in ext_data["extracted_text"]
 
-    demo_res = client.post("/api/auth/demo")
-    token = demo_res.json()["token"]
-
-    analyze_res = client.post(
-        "/api/documents/analyze",
-        data={
-            "text": ext_data["extracted_text"],
-            "language": "en",
-            "title": "Reviewed Post-Op Knee Summary"
-        },
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    with mock_muse_spark():
+        analyze_res = client.post(
+            "/api/documents/analyze",
+            data={"text": ext_data["extracted_text"], "language": "en", "title": "Reviewed Summary", "document_id": ext_data["document_id"], "confirm": "true"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
     assert analyze_res.status_code == 200
     ana_data = analyze_res.json()
-    assert "summary" in ana_data
-    assert len(ana_data["medication_instructions"]) > 0
+    assert "summary" in ana_data["analysis"]
+    assert len(ana_data["analysis"]["medication_instructions"]) > 0
+
+def test_failed_extraction_keeps_original_and_retryable_record():
+    registered = client.post("/api/auth/register", json={
+        "name": "Extraction Retry", "email": f"extract-{uuid.uuid4().hex}@example.test", "password": "password123"
+    })
+    token = registered.cookies.get("db_session")
+    headers = {"Authorization": f"Bearer {token}"}
+    original_text = "too short"
+    failed = client.post("/api/documents/extract", data={"text": original_text}, headers=headers)
+    assert failed.status_code == 200
+    body = failed.json()
+    assert body["extraction_status"] == "failed"
+    assert body["document_id"]
+    docs = client.get("/api/user/documents", headers=headers).json()["documents"]
+    assert len(docs) == 1 and docs[0]["status"] == "failed"
+    original = client.get(f"/api/user/documents/{body['document_id']}/file", headers=headers)
+    assert original.status_code == 200 and original.content == original_text.encode()
+    retried = client.post(f"/api/user/documents/{body['document_id']}/retry-extraction", headers=headers)
+    assert retried.status_code == 200
+    assert retried.json()["document"]["extraction_status"] == "failed"
 
 def test_task_toggle():
     demo_res = client.post("/api/auth/demo")
-    token = demo_res.json()["token"]
+    token = demo_res.cookies.get("db_session")
+
+    with mock_muse_spark():
+        client.post("/api/documents/analyze", data={"text": SAMPLE_DISCHARGE_TEXT, "confirm": "true"}, headers={"Authorization": f"Bearer {token}"})
 
     tasks_res = client.get("/api/user/tasks", headers={"Authorization": f"Bearer {token}"})
     tasks = tasks_res.json()["tasks"]
@@ -119,19 +198,18 @@ def test_task_toggle():
     assert toggle_res.status_code == 200
     assert toggle_res.json()["task"]["completed"] != initial_completed
 
-def test_sample_endpoints_multilingual():
+def test_test_fixture_multilingual_data():
     for lang in ["en", "hi", "bn"]:
-        res = client.get(f"/api/sample?lang={lang}")
-        assert res.status_code == 200
-        assert res.json()["language"] == lang
+        assert get_sample_discharge_data(lang).language == lang
 
 def test_sample_pdf_extract():
-    with open("app/static/sample_discharge_summary.pdf", "rb") as f:
+    with open("tests/fixtures/sample_discharge_summary.pdf", "rb") as f:
         pdf_bytes = f.read()
 
     res = client.post(
         "/api/documents/extract",
-        files={"file": ("sample.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+        files={"file": ("sample.pdf", io.BytesIO(pdf_bytes), "application/pdf")},
+        headers={"Authorization": f"Bearer {client.cookies.get('db_session')}"}
     )
     assert res.status_code == 200
     assert res.json()["page_count"] >= 1
@@ -141,10 +219,21 @@ def test_sample_pdf_extract():
 # TESTS FOR DUPLICATE DETECTION & DOCUMENT REMOVAL
 # ========================================================
 
+def _user_with_document(filename):
+    suffix = uuid.uuid4().hex
+    response = client.post("/api/auth/register", json={
+        "name": "Duplicate Test", "email": f"duplicate-{suffix}@example.test", "password": "password123"
+    })
+    token = response.cookies.get("db_session")
+    with mock_muse_spark():
+        saved = client.post("/api/documents/analyze", data={
+            "text": SAMPLE_DISCHARGE_TEXT, "filename": filename, "confirm": "true"
+        }, headers={"Authorization": f"Bearer {token}"})
+    assert saved.status_code == 200
+    return token
+
 def test_duplicate_detection_exact_case_and_spacing():
-    # Demo user already has 'knee_arthroscopy_discharge.pdf'
-    demo_res = client.post("/api/auth/demo")
-    token = demo_res.json()["token"]
+    token = _user_with_document("knee_arthroscopy_discharge.pdf")
 
     # 1. Exact duplicate with different capitalization
     res1 = client.post(
@@ -171,8 +260,7 @@ def test_duplicate_detection_exact_case_and_spacing():
     assert d2["duplicate_type"] == "exact"
 
 def test_duplicate_detection_potential_copy_markers():
-    demo_res = client.post("/api/auth/demo")
-    token = demo_res.json()["token"]
+    token = _user_with_document("knee_arthroscopy_discharge.pdf")
 
     # Potential duplicate with (1) suffix
     res = client.post(
@@ -187,8 +275,7 @@ def test_duplicate_detection_potential_copy_markers():
     assert d["existing_filename"] == "knee_arthroscopy_discharge.pdf"
 
 def test_duplicate_detection_different_document():
-    demo_res = client.post("/api/auth/demo")
-    token = demo_res.json()["token"]
+    token = _user_with_document("knee_arthroscopy_discharge.pdf")
 
     # Completely different document (e.g. October vs November)
     res = client.post(
@@ -209,18 +296,15 @@ def test_document_removal_and_task_cleanup():
         "password": "password123",
         "preferred_language": "en"
     })
-    token = reg.json()["token"]
+    token = reg.cookies.get("db_session")
 
     # 2. Upload and analyze a document
-    ana_res = client.post(
-        "/api/documents/analyze",
-        data={
-            "text": SAMPLE_DISCHARGE_TEXT,
-            "filename": "Rachel_Knee_Surgery.pdf",
-            "title": "Rachel Post-Op Knee"
-        },
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    with mock_muse_spark():
+        ana_res = client.post(
+            "/api/documents/analyze",
+            data={"text": SAMPLE_DISCHARGE_TEXT, "filename": "patient-summary.pdf", "confirm": "true"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
     assert ana_res.status_code == 200
 
     # 3. Check documents & tasks are populated
@@ -253,14 +337,15 @@ def test_document_removal_user_isolation_and_security():
         "password": "password123",
         "preferred_language": "en"
     })
-    token_bob = reg_bob.json()["token"]
+    token_bob = reg_bob.cookies.get("db_session")
 
     # Bob uploads a document
-    ana = client.post(
-        "/api/documents/analyze",
-        data={"text": SAMPLE_DISCHARGE_TEXT, "filename": "Bob_Surgery.pdf"},
-        headers={"Authorization": f"Bearer {token_bob}"}
-    )
+    with mock_muse_spark():
+        ana = client.post(
+            "/api/documents/analyze",
+            data={"text": SAMPLE_DISCHARGE_TEXT, "filename": "patient-summary.pdf", "confirm": "true"},
+            headers={"Authorization": f"Bearer {token_bob}"}
+        )
     bob_docs = client.get("/api/user/documents", headers={"Authorization": f"Bearer {token_bob}"}).json()["documents"]
     bob_doc_id = bob_docs[0]["id"]
 
@@ -271,7 +356,7 @@ def test_document_removal_user_isolation_and_security():
         "password": "password123",
         "preferred_language": "en"
     })
-    token_charlie = reg_charlie.json()["token"]
+    token_charlie = reg_charlie.cookies.get("db_session")
 
     # Charlie attempts to delete Bob's document
     del_unauth = client.delete(

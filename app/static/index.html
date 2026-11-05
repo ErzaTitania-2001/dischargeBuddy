@@ -70,12 +70,26 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
+  <style>
+    @media print {
+      body * { visibility: hidden !important; }
+      #view-handover, #view-handover * { visibility: visible !important; }
+      #view-handover { display: block !important; position: absolute; inset: 0; width: 100%; padding: 0; }
+      #view-handover button, #view-handover textarea, #view-handover input { display: none !important; }
+      #view-handover section { break-inside: avoid; }
+    }
+  </style>
 </head>
 <body class="h-full flex flex-col antialiased">
 
   <!-- ======================================================== -->
   <!-- 1. AUTHENTICATION SCREENS (When unauthenticated)        -->
   <!-- ======================================================== -->
+  <div id="session-restoring" class="hidden min-h-screen flex-col items-center justify-center gap-3 bg-slate-50 text-slate-700" role="status" aria-live="polite">
+    <span class="material-symbols-outlined text-primary text-3xl animate-spin">progress_activity</span>
+    <p id="session-restore-message">Restoring your session…</p>
+    <button id="session-retry-button" class="hidden rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" onclick="restoreSession()">Try again</button>
+  </div>
   <div id="auth-container" class="min-h-screen flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-teal-50/50 via-slate-50 to-slate-100">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
       <!-- App Brand Header -->
@@ -183,10 +197,10 @@
 
           <button type="button" onclick="handleDemoLogin()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
             <span class="material-symbols-outlined text-base text-emerald-600">science</span>
-            <span>Try Demo Mode (Instant Synthetic Data)</span>
+            <span>Open Empty Demonstration Account</span>
           </button>
           <p class="text-center text-[11px] text-slate-500">
-            Pre-loaded with sample orthopedic knee arthroscopy discharge data.
+            Sign in to review your discharge paperwork and care plan.
           </p>
         </div>
 
@@ -248,6 +262,10 @@
           <span>My Care Tasks</span>
         </button>
 
+        <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="handover" onclick="openHandover('caregiver')">
+          <span class="material-symbols-outlined text-lg">handshake</span><span>Visit &amp; Caregiver Handover</span>
+        </button>
+
         <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="profile" onclick="navigateTo('profile')">
           <span class="material-symbols-outlined text-lg">person</span>
           <span>Profile &amp; Settings</span>
@@ -294,9 +312,9 @@
         <!-- Header Actions: Regional Emergency Notice + Upload CTA + Language + Profile -->
         <div class="flex items-center gap-2 sm:gap-3">
           <!-- Regional Emergency Notice Tag -->
-          <a href="tel:911" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-semibold hover:bg-red-100 transition-colors">
+          <a id="header-emergency-link" href="#emergency-banner" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-semibold hover:bg-red-100 transition-colors">
             <span class="material-symbols-outlined text-sm text-red-600">emergency</span>
-            <span>Emergency? Call 911 / Local ER</span>
+            <span>Emergency? Call <span id="header-emergency-number">Emergency services</span></span>
           </a>
 
           <!-- Quick Upload Action Button -->
@@ -321,21 +339,23 @@
 
       <!-- MAIN PAGE VIEWPORT (Fluid Desktop & Mobile) -->
       <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
+        <div id="data-load-status" class="hidden mb-4 rounded-xl border px-4 py-3 text-sm" role="status" aria-live="polite"></div>
+
+        <section id="emergency-banner" class="sticky top-16 z-10 mb-5 flex items-center justify-between gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-red-950 shadow-sm" aria-label="Emergency contact">
+          <div class="flex items-center gap-2 text-sm font-bold"><span class="material-symbols-outlined text-red-700" aria-hidden="true">emergency</span><span>Emergency services</span></div>
+          <a id="dashboard-emergency-number" href="#" class="min-h-11 min-w-20 rounded-lg bg-red-700 px-4 py-2 text-center text-base font-bold text-white underline-offset-2 hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-900 focus-visible:ring-offset-2">Call</a>
+        </section>
 
         <!-- ======================================================== -->
         <!-- VIEW 1: HOME / DASHBOARD                                 -->
         <!-- ======================================================== -->
         <section id="view-dashboard" class="space-y-6">
           
-          <!-- Meaningful User Greeting & Mode Notice -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 class="text-2xl font-bold text-slate-900 tracking-tight" id="dash-greeting">Welcome back</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Here is your recovery action plan and current discharge instructions.</p>
-            </div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight" data-i18n="overview">Today's Recovery Overview</h2>
             <div id="demo-mode-banner" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold">
               <span class="material-symbols-outlined text-sm text-amber-600">info</span>
-              <span>Running in Demo Mode (Synthetic Clinical Data)</span>
+              <span>Demo account</span>
             </div>
           </div>
 
@@ -353,15 +373,10 @@
                 <span class="material-symbols-outlined text-base">add_circle</span>
                 <span>Upload Discharge Summary</span>
               </button>
-              <button onclick="handleDemoLogin()" class="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-base">science</span>
-                <span>Load Sample Demonstration</span>
-              </button>
             </div>
           </div>
 
           <div id="dash-overview" class="hidden space-y-5">
-            <h2 class="text-xl font-bold text-slate-900" data-i18n="overview">Today's Recovery Overview</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <article class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
                 <div class="flex items-center justify-between"><h3 class="font-bold text-slate-900" data-i18n="medicines">My Medicines</h3><span id="dash-meds-count" class="text-xs text-primary font-bold"></span></div>
@@ -384,30 +399,13 @@
           </div>
 
           <!-- RETURNING USER DASHBOARD GRID (Fluid 2-Column Desktop Layout) -->
-          <div id="dash-active-content" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div id="dash-active-content" class="block space-y-6">
             
             <!-- LEFT MAIN COLUMN (2/3 Width) -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="space-y-6">
               
-              <div class="hidden bg-gradient-to-r from-teal-50/80 to-white rounded-2xl border border-teal-200/70 p-5 shadow-xs flex items-start gap-4">
-                <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                  <span class="material-symbols-outlined text-xl">schedule</span>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <span class="text-[11px] font-bold text-primary uppercase tracking-wider">Next Action</span>
-                  <h4 class="text-sm font-bold text-slate-900 mt-0.5" id="dash-next-action-title">Review pending post-op instructions</h4>
-                  <p class="text-xs text-slate-600 mt-1" id="dash-next-action-desc">Check your prescribed medication schedule and wound inspection instructions.</p>
-                  <div class="mt-3">
-                    <button onclick="navigateTo('care')" class="text-xs text-primary font-bold hover:underline flex items-center gap-1">
-                      <span>Go to Care Checklist</span>
-                      <span class="material-symbols-outlined text-xs">arrow_forward</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               <!-- Recent Discharge Documents Section -->
-              <div class="hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+              <div id="dashboard-recent-docs-card" class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Recent Discharge Documents</h3>
                   <button onclick="navigateTo('documents')" class="text-xs text-primary font-semibold hover:underline">Manage All</button>
@@ -419,7 +417,7 @@
               </div>
 
               <!-- Daily Comfort / Self-Report Widget -->
-              <div class="hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+              <div id="dashboard-pain-tracker-card" class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-bold text-slate-900">Daily Pain &amp; Comfort Tracker</h3>
                   <span class="text-xs text-slate-400 font-medium">Self-Report</span>
@@ -427,31 +425,31 @@
                 <p class="text-xs text-slate-500">Rate your current comfort level from 1 (Minimal) to 10 (Severe):</p>
                 
                 <div class="flex items-center justify-between gap-1 overflow-x-auto py-1">
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(1)">1</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(2)">2</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-primary text-white text-xs font-bold shadow-sm" onclick="setPainScore(3)">3</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(4)">4</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(5)">5</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(6)">6</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(7)">7</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(8)">8</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(9)">9</button>
-                  <button class="pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors" onclick="setPainScore(10)">10</button>
+                  <button aria-label="Record comfort score 1" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(1)">1</button>
+                  <button aria-label="Record comfort score 2" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(2)">2</button>
+                  <button aria-label="Record comfort score 3" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(3)">3</button>
+                  <button aria-label="Record comfort score 4" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(4)">4</button>
+                  <button aria-label="Record comfort score 5" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(5)">5</button>
+                  <button aria-label="Record comfort score 6" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(6)">6</button>
+                  <button aria-label="Record comfort score 7" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(7)">7</button>
+                  <button aria-label="Record comfort score 8" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(8)">8</button>
+                  <button aria-label="Record comfort score 9" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(9)">9</button>
+                  <button aria-label="Record comfort score 10" class="pain-chip min-w-11 min-h-11 rounded-xl bg-slate-100 text-slate-700 text-base font-bold hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="setPainScore(10)">10</button>
                 </div>
 
                 <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 flex items-center gap-2" id="pain-feedback-box">
                   <span class="material-symbols-outlined text-primary text-base">info</span>
-                  <span id="pain-feedback-text">Score 3: Moderate discomfort. Keep leg elevated above heart level and apply ice pack.</span>
+                  <span id="pain-feedback-text">No comfort scores recorded.</span>
                 </div>
               </div>
 
             </div>
 
             <!-- RIGHT SECONDARY CARE COLUMN (1/3 Width) -->
-            <div class="space-y-6">
+            <div class="hidden space-y-6">
               
               <!-- Care Adherence Summary Card -->
-              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+              <div class="hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Care Task Adherence</h3>
                   <span class="text-xs font-bold text-primary" id="dash-task-pct">0%</span>
@@ -469,7 +467,7 @@
               </div>
 
               <!-- Upcoming Follow-Up Visits -->
-              <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+              <div class="hidden bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
                 <div class="flex items-center justify-between">
                   <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Follow-Up Schedule</h3>
                   <span class="text-xs font-semibold text-primary" id="dash-apt-badge">0 Scheduled</span>
@@ -496,10 +494,6 @@
               <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Documents &amp; Intake</h2>
               <p class="text-xs text-slate-500 mt-0.5">Upload, review extracted text, and generate patient-friendly explanations.</p>
             </div>
-            <button onclick="loadSampleIntoIntake()" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-              <span class="material-symbols-outlined text-sm">science</span>
-              <span>Test with Synthetic Sample Document</span>
-            </button>
           </div>
 
           <!-- STEP A: UPLOAD & INGESTION -->
@@ -679,21 +673,21 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
               <div>
                 <span class="text-[10px] font-bold text-primary uppercase tracking-wider">Hospital Document</span>
-                <h3 class="text-base font-bold text-slate-900" id="sum-facility">St. Jude Memorial Hospital</h3>
+                <h3 class="text-base font-bold text-slate-900" id="sum-facility">Not specified in discharge summary</h3>
               </div>
               <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 self-start" id="sum-record-no">
-                Record #SJM-84920
+                Not specified in discharge summary
               </span>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div class="p-2.5 rounded-xl bg-slate-50">
                 <span class="text-[10px] text-slate-400 block font-medium">Patient</span>
-                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-patient-name">Patient Name</span>
+                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-patient-name">Not specified in discharge summary</span>
               </div>
               <div class="p-2.5 rounded-xl bg-slate-50">
                 <span class="text-[10px] text-slate-400 block font-medium">Attending Clinician</span>
-                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-attending">Dr. Robert Chen, MD</span>
+                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-attending">Not specified in discharge summary</span>
               </div>
               <div class="p-2.5 rounded-xl bg-slate-50">
                 <span class="text-[10px] text-slate-400 block font-medium">Discharge Date</span>
@@ -701,7 +695,7 @@
               </div>
               <div class="p-2.5 rounded-xl bg-slate-50">
                 <span class="text-[10px] text-slate-400 block font-medium">Procedure / Diagnosis</span>
-                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-procedure">Knee Arthroscopy</span>
+                <span class="font-bold text-slate-800 truncate block mt-0.5" id="sum-procedure">Not specified in discharge summary</span>
               </div>
             </div>
 
@@ -709,7 +703,7 @@
             <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-start gap-2.5 text-xs text-slate-600">
               <span class="material-symbols-outlined text-primary text-base shrink-0 mt-0.5">verified_user</span>
               <p class="leading-relaxed">
-                <strong class="text-slate-800">Clinical Precedence:</strong> AI translations provide patient-friendly guidance. Your original medical document and healthcare professional take precedence. Never alter or discontinue prescribed medication without physician consultation.
+                <strong class="text-slate-800">Clinical Precedence:</strong> This is not medical advice. The original discharge document and your treating clinician take precedence.
               </p>
             </div>
           </div>
@@ -737,7 +731,7 @@
                 <h3 class="text-base font-bold text-slate-900">Prescribed Medications</h3>
                 <p class="text-xs text-slate-500">Exact doctor's order paired with simple patient instructions</p>
               </div>
-              <span class="px-2.5 py-1 rounded-full bg-slate-100 text-xs font-semibold text-slate-700" id="sum-meds-count">3 Prescriptions</span>
+              <span class="px-2.5 py-1 rounded-full bg-slate-100 text-xs font-semibold text-slate-700" id="sum-meds-count">0 Prescribed Medicines</span>
             </div>
 
             <div id="sum-medications-list" class="space-y-4">
@@ -756,6 +750,8 @@
             </ul>
           </div>
 
+          <div id="sum-health-context" class="grid gap-3 sm:grid-cols-3" aria-live="polite"></div>
+
           <!-- Red-Flag Warning Signs -->
           <div class="bg-red-50/80 border border-red-200 rounded-2xl p-6 shadow-xs space-y-4">
             <div class="flex items-start gap-3">
@@ -765,7 +761,7 @@
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-red-600">Discharge Safety Protocol</span>
                 <h3 class="text-base font-bold text-red-950">Red-Flag Warning Signs</h3>
-                <p class="text-xs text-red-800/80 mt-0.5">Call your clinic or seek emergency medical care immediately if you experience:</p>
+                <p class="text-xs text-red-800/80 mt-0.5">Warning signs and actions stated in the discharge summary:</p>
               </div>
             </div>
 
@@ -774,13 +770,9 @@
             </div>
 
             <div class="pt-2 flex flex-col sm:flex-row gap-3">
-              <a href="tel:5550192834" class="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-base">phone_in_talk</span>
-                <span>Call Care Team / Triage</span>
-              </a>
-              <a href="tel:911" class="flex-1 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-red-700 border border-red-300 text-xs font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
+              <a id="summary-emergency-link" href="#emergency-banner" class="min-h-11 flex-1 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-red-700 border border-red-300 text-base font-bold transition-colors shadow-sm flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-900 focus-visible:ring-offset-2">
                 <span class="material-symbols-outlined text-base text-red-600">emergency</span>
-                <span>Call Local Emergency Services (911)</span>
+                <span>Call emergency services</span>
               </a>
             </div>
           </div>
@@ -801,8 +793,10 @@
             <!-- Task Filters: All, Upcoming, Completed -->
             <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-xs text-xs font-semibold">
               <button class="care-filter-btn px-3 py-1 rounded-lg bg-primary text-white shadow-xs" data-filter="all" onclick="filterCareTasks('all')">All</button>
-              <button class="care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900" data-filter="pending" onclick="filterCareTasks('pending')">Upcoming</button>
+              <button class="care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900" data-filter="overdue" onclick="filterCareTasks('overdue')">Overdue</button>
+              <button class="care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900" data-filter="upcoming" onclick="filterCareTasks('upcoming')">Upcoming</button>
               <button class="care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900" data-filter="completed" onclick="filterCareTasks('completed')">Completed</button>
+              <button class="care-filter-btn px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900" data-filter="no_due_date" onclick="filterCareTasks('no_due_date')">No due date</button>
             </div>
           </div>
 
@@ -826,7 +820,7 @@
             <span class="material-symbols-outlined text-emerald-600 text-2xl" style="font-variation-settings: 'FILL' 1;">military_tech</span>
             <div>
               <h4 class="text-xs font-bold">All Recovery Tasks Completed!</h4>
-              <p class="text-xs text-emerald-800">Great adherence today. Rest up, maintain elevation, and stay hydrated.</p>
+              <p class="text-xs text-emerald-800">Recorded tasks are complete.</p>
             </div>
           </div>
 
@@ -848,6 +842,23 @@
         <!-- ======================================================== -->
         <!-- VIEW 5: PROFILE & SETTINGS                               -->
         <!-- ======================================================== -->
+        <section id="view-handover" class="hidden space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div><h2 class="text-2xl font-bold text-slate-900">Visit &amp; Caregiver Handover</h2><p class="text-sm text-slate-600">This is not medical advice. The original discharge document and your treating clinician take precedence.</p></div>
+            <div class="flex gap-2"><button onclick="shareHandover()" class="min-h-11 rounded-lg border px-4 font-semibold">Share pack</button><button onclick="printHandover()" class="min-h-11 rounded-lg border px-4 font-semibold">Print / Save PDF</button><button onclick="navigateTo('dashboard')" class="min-h-11 rounded-lg bg-primary px-4 font-semibold text-white">Done</button></div>
+          </div>
+          <p id="handover-progress" class="text-sm font-semibold text-slate-700" aria-live="polite"></p>
+          <div id="handover-content" class="space-y-4"></div>
+          <div id="handover-teachback" class="hidden rounded-xl border border-primary/30 bg-white p-4 space-y-3"><h3 class="font-bold">Caregiver teach-back</h3><p class="text-sm text-slate-600">Select the information shown in the discharge document. “Not specified” means the document does not state it.</p><div id="handover-questions" class="space-y-3"></div></div>
+          <div class="rounded-xl border bg-white p-4 space-y-3">
+            <label class="block text-sm font-semibold">Questions or notes to discuss<textarea id="handover-notes" class="mt-1 min-h-24 w-full rounded-lg border p-3"></textarea></label>
+            <div class="grid gap-3 sm:grid-cols-2"><label class="text-sm">Outgoing caregiver / patient<input id="handover-outgoing" class="mt-1 min-h-11 w-full rounded-lg border p-2" /></label><label class="text-sm">Incoming caregiver / clinician<input id="handover-incoming" class="mt-1 min-h-11 w-full rounded-lg border p-2" /></label></div>
+            <label class="block text-sm">Where the original documents are kept<input id="handover-doc-location" class="mt-1 min-h-11 w-full rounded-lg border p-2" /></label>
+            <button onclick="finishHandover()" class="min-h-11 rounded-lg bg-primary px-5 font-bold text-white">Save handover</button>
+          </div>
+          <div id="handover-history" class="rounded-xl border bg-white p-4"><h3 class="font-bold">Handover history</h3><div class="mt-2 space-y-2 text-sm text-slate-700"></div></div>
+        </section>
+
         <section id="view-profile" class="hidden space-y-6">
           <div>
             <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Account &amp; Preferences</h2>
@@ -887,6 +898,18 @@
                   <option value="bn">বাংলা (Bengali)</option>
                 </select>
               </div>
+
+              <fieldset class="space-y-2 rounded-xl border border-slate-200 p-3">
+                <legend class="px-1 text-xs font-bold text-slate-800">Follow-up email reminders</legend>
+                <label class="flex min-h-11 items-center gap-2 text-xs text-slate-700"><input id="pref-email-reminders" type="checkbox" class="h-4 w-4 accent-teal-700"> Send appointment reminders three days before</label>
+                <label class="block text-xs font-semibold text-slate-700">Account timezone
+                  <input id="pref-timezone" value="Asia/Kolkata" placeholder="Asia/Kolkata" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs">
+                </label>
+                <p id="email-verification-status" class="text-xs text-slate-600" aria-live="polite"></p>
+                <button type="button" onclick="requestEmailVerification()" id="verify-email-button" class="min-h-10 rounded-lg border px-3 text-xs font-semibold">Verify account email</button>
+                <p class="text-[11px] text-slate-500">Reminders are sent only after you enable them and verify your email address.</p>
+                <div id="reminder-delivery-history" class="space-y-1 text-[11px] text-slate-600" aria-live="polite"></div>
+              </fieldset>
 
               <div class="pt-2">
                 <button onclick="saveProfilePreferences()" class="py-2 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-sm transition-colors">
@@ -932,6 +955,11 @@
         <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="care" onclick="navigateTo('care')">
           <span class="material-symbols-outlined text-2xl">check_circle</span>
           <span class="text-[10px]">My Care</span>
+        </button>
+
+        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="handover" onclick="openHandover('caregiver')">
+          <span class="material-symbols-outlined text-2xl">handshake</span>
+          <span class="text-[10px]">Handover</span>
         </button>
 
         <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="profile" onclick="navigateTo('profile')">
@@ -1022,6 +1050,14 @@
     </div>
   </div>
 
+  <div id="review-confirm-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-900/70 p-4" role="dialog" aria-modal="true" aria-labelledby="review-confirm-title">
+    <div class="mx-auto my-4 max-w-3xl space-y-4 rounded-2xl bg-white p-5 shadow-2xl">
+      <div><h2 id="review-confirm-title" class="text-xl font-bold">Review extracted information</h2><p class="mt-1 text-sm text-slate-600">Nothing is saved as confirmed until you finish this review. Compare each item with the original document.</p></div>
+      <div id="review-confirm-content" class="max-h-[55vh] space-y-3 overflow-y-auto"></div>
+      <div class="grid gap-3 sm:grid-cols-2"><label class="text-sm">Add a patient note<textarea data-addition-section="Patient note" class="review-addition mt-1 min-h-20 w-full rounded-lg border p-2"></textarea></label><label class="text-sm">Add an allergy or history detail<textarea data-addition-section="Additional health detail" class="review-addition mt-1 min-h-20 w-full rounded-lg border p-2"></textarea></label></div>
+      <div class="flex flex-wrap justify-end gap-2"><button onclick="cancelPendingReview()" class="min-h-11 rounded-lg border px-4 font-semibold">Cancel review</button><button id="review-confirm-button" onclick="confirmPendingReview()" class="min-h-11 rounded-lg bg-primary px-5 font-bold text-white">Confirm review and save</button></div>
+    </div>
+  </div>
   <div id="global-toast" class="fixed bottom-20 lg:bottom-8 right-1/2 translate-x-1/2 lg:translate-x-0 lg:right-8 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
     <span class="material-symbols-outlined text-emerald-400 text-base" id="toast-icon">check_circle</span>
     <span id="toast-text">Update complete</span>
@@ -1039,17 +1075,51 @@
       currentPage: 'dashboard',
       currentLanguage: 'en',
       documents: [],
+      medicines: [],
+      reminderDeliveries: [],
       tasks: [],
+      painEntries: [],
+      handoverEvents: [],
+      autoHandoverShown: false,
       currentDocumentAnalysis: null,
+      pendingReviewId: null,
+      pendingReviewAnalysis: null,
+      handoverKind: 'visit',
       pendingDeleteDocId: null,
       intake: {
         mode: 'pdf',
         file: null,
         extractedText: '',
-        filename: null
+        filename: null,
+        documentId: null
       },
       careFilter: 'all'
     };
+    let refreshInFlight = null;
+    let userDataRequestId = 0;
+    const SESSION_STORAGE_KEY = 'dischargebuddy_session_token'; // legacy token key, cleared after cookie migration
+    const SESSION_MARKER_KEY = 'dischargebuddy_authenticated';
+    let regionSettings = { emergency_number: '' };
+
+    function resetAccountDataIfSwitched(nextUserId) {
+      if (state.user?.id && state.user.id !== nextUserId) {
+        state.documents = []; state.tasks = []; state.medicines = []; state.painEntries = []; state.handoverEvents = [];
+        state.reminderDeliveries = [];
+        state.currentDocumentAnalysis = null; state.pendingReviewId = null; state.pendingReviewAnalysis = null;
+        renderDashboard(); renderDocumentsView(); renderCareTasks(); renderPainTracker();
+      }
+    }
+
+    window.addEventListener('storage', (event) => {
+      if (event.key !== SESSION_MARKER_KEY && event.key !== SESSION_STORAGE_KEY) return;
+      if (event.newValue) {
+        state.token = event.key === SESSION_STORAGE_KEY ? event.newValue : 'cookie-session';
+        restoreSession();
+      } else {
+        clearLocalSession();
+        renderAuthView();
+      }
+    });
 
     // Filename Normalization and Duplicate Detection Utilities
     function normalizeFilename(filename) {
@@ -1130,15 +1200,37 @@
 
     // Initialize application on load
     window.addEventListener('DOMContentLoaded', async () => {
-      // Check for saved session token in sessionStorage (no passwords in storage)
-      const savedToken = sessionStorage.getItem('dischargebuddy_session_token');
-      if (savedToken) {
-        state.token = savedToken;
-        await restoreSession();
-      } else {
-        renderAuthView();
+      loadRegionSettings();
+      const legacyToken = localStorage.getItem(SESSION_STORAGE_KEY) || sessionStorage.getItem(SESSION_STORAGE_KEY);
+      state.token = legacyToken || 'cookie-session';
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('session-restoring').classList.remove('hidden');
+      document.getElementById('session-restoring').classList.add('flex');
+      await restoreSession();
+      if (state.user && new URLSearchParams(window.location.search).get('email_verified') === '1') {
+        showToast('Email verified. You can enable appointment reminders in Profile & Settings.');
+        history.replaceState({}, '', window.location.pathname);
       }
     });
+
+    async function loadRegionSettings() {
+      try {
+        const response = await fetch('/api/settings/region');
+        if (response.ok) regionSettings = await response.json();
+      } catch (error) {
+        console.warn('Regional emergency setting unavailable; keeping configured default.', error);
+      }
+      const number = regionSettings.emergency_number || '';
+      const href = `tel:${String(number).replace(/[^+\d]/g, '')}`;
+      const dashboardLink = document.getElementById('dashboard-emergency-number');
+      dashboardLink.href = href;
+      dashboardLink.href = number ? href : '#emergency-banner';
+      dashboardLink.textContent = number ? `Call ${number}` : 'Number unavailable';
+      dashboardLink.setAttribute('aria-disabled', String(!number));
+      document.getElementById('header-emergency-link').href = number ? href : '#emergency-banner';
+      document.getElementById('header-emergency-number').textContent = number || 'number unavailable';
+      document.getElementById('summary-emergency-link').href = number ? href : '#emergency-banner';
+    }
 
     // ----------------------------------------------------
     // Auth Workflows (Login, Register, Demo, Logout)
@@ -1198,7 +1290,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Login failed.');
 
-        setSession(data.user, data.token);
+        setSession(data.user);
       } catch (err) {
         showAuthError(err.message);
       }
@@ -1227,7 +1319,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Registration failed.');
 
-        setSession(data.user, data.token);
+        setSession(data.user);
         showToast(`Welcome to DischargeBuddy, ${name}!`);
       } catch (err) {
         showAuthError(err.message);
@@ -1240,68 +1332,152 @@
         const data = await res.json();
         if (!res.ok) throw new Error('Demo initialization failed.');
 
-        setSession(data.user, data.token);
-        showToast('Demo Mode initialized with sample recovery plan.');
+        setSession(data.user);
+        showToast('Demo account opened. No patient data is preloaded.');
       } catch (err) {
         showAuthError(err.message);
       }
     }
 
-    function setSession(user, token) {
+    function setSession(user) {
+      resetAccountDataIfSwitched(user.id);
       state.user = user;
-      state.token = token;
+      state.token = 'cookie-session';
       state.currentLanguage = user.preferred_language || 'en';
-      sessionStorage.setItem('dischargebuddy_session_token', token);
+      localStorage.setItem(SESSION_MARKER_KEY, String(Date.now()));
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
       
       renderAppShell();
-      loadUserData();
     }
 
     async function restoreSession() {
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('app-shell').classList.add('hidden');
+      document.getElementById('session-restoring').classList.remove('hidden');
+      document.getElementById('session-restoring').classList.add('flex');
+      document.getElementById('session-retry-button').classList.add('hidden');
+      document.getElementById('session-restore-message').textContent = 'Restoring your session…';
       try {
-        const res = await fetch('/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${state.token}` }
+        const res = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: state.token && state.token !== 'cookie-session' ? { 'Authorization': `Bearer ${state.token}` } : {}
         });
         if (res.ok) {
           const data = await res.json();
+          resetAccountDataIfSwitched(data.user.id);
           state.user = data.user;
+          state.token = 'cookie-session';
+          localStorage.setItem(SESSION_MARKER_KEY, '1');
+          localStorage.removeItem(SESSION_STORAGE_KEY);
+          sessionStorage.removeItem(SESSION_STORAGE_KEY);
           state.currentLanguage = data.user.preferred_language || 'en';
+          document.getElementById('session-restoring').classList.add('hidden');
+          document.getElementById('session-restoring').classList.remove('flex');
           renderAppShell();
-          await loadUserData();
-        } else {
-          sessionStorage.removeItem('dischargebuddy_session_token');
+        } else if (res.status === 401) {
+          clearLocalSession();
           renderAuthView();
+        } else {
+          showRestoreRetry();
         }
       } catch {
-        renderAuthView();
+        showRestoreRetry();
       }
     }
 
-    async function handleLogout() {
-      try {
-        if (state.token) {
-          await fetch('/api/auth/logout', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${state.token}` }
-          });
-        }
-      } catch (e) {
-        console.error(e);
-      }
+    function showRestoreRetry() {
+      document.getElementById('session-restoring').classList.remove('hidden');
+      document.getElementById('session-restoring').classList.add('flex');
+      document.getElementById('session-restore-message').textContent = 'Could not reach DischargeBuddy. Your session is saved; check your connection and try again.';
+      document.getElementById('session-retry-button').classList.remove('hidden');
+    }
 
-      // Clear memory and session
+    function clearLocalSession() {
       state.user = null;
       state.token = null;
       state.documents = [];
       state.tasks = [];
+      state.medicines = [];
+      state.reminderDeliveries = [];
+      state.painEntries = [];
+      state.handoverEvents = [];
       state.currentDocumentAnalysis = null;
-      sessionStorage.removeItem('dischargebuddy_session_token');
+      state.pendingReviewId = null;
+      state.pendingReviewAnalysis = null;
+      state.autoHandoverShown = false;
+      document.getElementById('handover-notes').value = '';
+      document.getElementById('handover-doc-location').value = '';
+      document.getElementById('review-confirm-modal').classList.add('hidden');
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      localStorage.removeItem(SESSION_MARKER_KEY);
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
 
+    async function refreshSessionOnce() {
+      if (refreshInFlight) return refreshInFlight;
+      refreshInFlight = (async () => {
+        try {
+          const response = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: state.token && state.token !== 'cookie-session' ? { 'Authorization': `Bearer ${state.token}` } : {}
+          });
+          if (response.ok) {
+            const data = await response.json();
+            resetAccountDataIfSwitched(data.user.id);
+            state.user = data.user;
+            state.token = 'cookie-session';
+            localStorage.setItem(SESSION_MARKER_KEY, '1');
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            return 'ok';
+          }
+          if (response.status === 401) {
+            clearLocalSession();
+            renderAuthView();
+            return 'invalid';
+          }
+          return 'unavailable';
+        } catch {
+          return 'unavailable';
+        } finally {
+          refreshInFlight = null;
+        }
+      })();
+      return refreshInFlight;
+    }
+
+    async function authenticatedFetch(url, options = {}) {
+      const headers = new Headers(options.headers || {});
+      if (state.token && state.token !== 'cookie-session') headers.set('Authorization', `Bearer ${state.token}`);
+      const response = await fetch(url, { ...options, credentials: 'same-origin', headers });
+      if (response.status !== 401 || String(url).startsWith('/api/auth/')) return response;
+      const refreshed = await refreshSessionOnce();
+      if (refreshed !== 'ok') return response;
+      const retryHeaders = new Headers(options.headers || {});
+      if (state.token && state.token !== 'cookie-session') retryHeaders.set('Authorization', `Bearer ${state.token}`);
+      return fetch(url, { ...options, credentials: 'same-origin', headers: retryHeaders });
+    }
+
+    async function handleLogout() {
+      const token = state.token;
+      clearLocalSession();
       renderAuthView();
       showToast('Signed out successfully.');
+      if (token) {
+        fetch('/api/auth/logout', {
+          method: 'POST',
+          keepalive: true,
+          credentials: 'same-origin',
+          headers: token !== 'cookie-session' ? { 'Authorization': `Bearer ${token}` } : {}
+        }).catch((err) => console.warn('Server logout could not be confirmed:', err));
+      }
     }
 
     function renderAuthView() {
+      document.getElementById('session-restoring').classList.add('hidden');
+      document.getElementById('session-restoring').classList.remove('flex');
       document.getElementById('auth-container').classList.remove('hidden');
       document.getElementById('app-shell').classList.add('hidden');
     }
@@ -1339,6 +1515,10 @@
       document.getElementById('profile-account-type').textContent = state.user.is_demo ? 'Interactive Demo Account' : 'Verified Patient Account';
       document.getElementById('pref-display-name').value = state.user.name;
       document.getElementById('pref-language').value = state.currentLanguage;
+      document.getElementById('pref-email-reminders').checked = !!state.user.email_notifications_enabled;
+      document.getElementById('pref-timezone').value = state.user.timezone || 'Asia/Kolkata';
+      document.getElementById('email-verification-status').textContent = state.user.email_verified ? `Verified: ${state.user.email}` : `Not verified: ${state.user.email}`;
+      document.getElementById('verify-email-button').classList.toggle('hidden', !!state.user.email_verified);
 
       setAppLanguage(state.currentLanguage, false);
       navigateTo('dashboard');
@@ -1348,34 +1528,52 @@
     // User Data Management (Documents & Tasks)
     // ----------------------------------------------------
     async function loadUserData() {
-      if (!state.token) return;
-
+      const userId = state.user?.id;
+      if (!state.token || !userId) return;
+      const requestId = ++userDataRequestId;
+      const statusBox = document.getElementById('data-load-status');
+      statusBox.className = 'mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900';
+      statusBox.textContent = 'Loading your saved account data…';
+      statusBox.classList.remove('hidden');
+      if (!state.documents.length && !state.tasks.length) {
+        document.getElementById('dash-empty-state').classList.add('hidden');
+        document.getElementById('dash-active-content').classList.add('hidden');
+        document.getElementById('docs-history-list').innerHTML = '<p class="text-xs text-slate-500 py-3">Loading saved documents…</p>';
+        document.getElementById('care-empty-state').classList.add('hidden');
+        document.getElementById('care-tasks-list').innerHTML = '<p class="text-xs text-slate-500 py-3">Loading saved care tasks…</p>';
+      }
       try {
-        const [docsRes, tasksRes] = await Promise.all([
-          fetch('/api/user/documents', { headers: { 'Authorization': `Bearer ${state.token}` } }),
-          fetch('/api/user/tasks', { headers: { 'Authorization': `Bearer ${state.token}` } })
-        ]);
-
-        if (docsRes.ok) {
-          const docsData = await docsRes.json();
-          state.documents = docsData.documents || [];
-          if (state.documents.length > 0 && !state.currentDocumentAnalysis) {
-            state.currentDocumentAnalysis = state.documents[0].analysis;
-          }
+        const endpoints = ['/api/user/documents', '/api/user/tasks', '/api/user/tracker/pain', '/api/user/handover/history', '/api/user/medicines', '/api/auth/me', '/api/user/reminders'];
+        const responses = await Promise.all(endpoints.map(url => authenticatedFetch(url)));
+        const failed = responses.find(response => !response.ok);
+        if (failed) throw new Error(failed.status === 401 ? 'Your session expired. Sign in again.' : `Account data request failed (${failed.status}).`);
+        const [docsData, tasksData, painData, handoverData, medicineData, profileData, reminderData] = await Promise.all(responses.map(response => response.json()));
+        if (state.user?.id !== userId || requestId !== userDataRequestId) return;
+        if (!Array.isArray(docsData.documents) || !Array.isArray(tasksData.tasks) || !Array.isArray(painData.entries) || !Array.isArray(handoverData.events) || !Array.isArray(medicineData.medicines) || !Array.isArray(reminderData.deliveries) || profileData.user?.id !== userId) {
+          throw new Error('The server returned an incomplete account-data response.');
         }
-
-        if (tasksRes.ok) {
-          const tasksData = await tasksRes.json();
-          state.tasks = tasksData.tasks || [];
-        }
-
+        state.documents = docsData.documents;
+        state.tasks = tasksData.tasks;
+        state.painEntries = painData.entries;
+        state.handoverEvents = handoverData.events;
+        state.medicines = medicineData.medicines;
+        state.reminderDeliveries = reminderData.deliveries;
+        state.user = profileData.user;
+        document.getElementById('email-verification-status').textContent = state.user.email_verified ? `Verified: ${state.user.email}` : `Not verified: ${state.user.email}`;
+        document.getElementById('verify-email-button').classList.toggle('hidden', !!state.user.email_verified);
+        renderReminderDeliveries();
+        if (state.documents.length) state.currentDocumentAnalysis = state.documents.find(doc => doc.analysis)?.analysis || null;
+        else state.currentDocumentAnalysis = null;
+        statusBox.classList.add('hidden');
         renderDashboard();
         renderDocumentsView();
         renderCareTasks();
-        if (state.currentDocumentAnalysis) {
-          renderDischargeSummary(state.currentDocumentAnalysis);
-        }
+        renderPainTracker();
+        if (state.currentDocumentAnalysis) renderDischargeSummary(state.currentDocumentAnalysis);
       } catch (err) {
+        if (state.user?.id !== userId || requestId !== userDataRequestId) return;
+        statusBox.className = 'mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950';
+        statusBox.textContent = `Could not refresh saved data. Any data already shown is preserved. ${err.message}`;
         console.error('Failed to load user data:', err);
       }
     }
@@ -1385,7 +1583,7 @@
     // ----------------------------------------------------
     function navigateTo(page) {
       state.currentPage = page;
-      const pages = ['dashboard', 'documents', 'summary', 'care', 'profile'];
+      const pages = ['dashboard', 'documents', 'summary', 'care', 'handover', 'profile'];
       
       pages.forEach(p => {
         const el = document.getElementById(`view-${p}`);
@@ -1420,20 +1618,51 @@
         documents: { title: 'Documents & Intake', sub: '— Review and upload paperwork' },
         summary: { title: 'Discharge Summary & Rx', sub: '— Plain-language medical instructions' },
         care: { title: 'My Care Plan', sub: '— Daily recovery tasks & follow-up visits' },
+        handover: { title: 'Visit & Caregiver Handover', sub: '— Share source-backed care details' },
         profile: { title: 'Profile & Settings', sub: '— Preferences and account safety' }
       };
       document.getElementById('header-page-title').textContent = titles[page].title;
       document.getElementById('header-subtitle').textContent = titles[page].sub;
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (state.token && state.user) loadUserData();
     }
 
     // ----------------------------------------------------
     // Dashboard Rendering (Handles Empty vs Returning)
     // ----------------------------------------------------
+    function uniqueInstructionLines(values) {
+      const result = [];
+      for (const raw of values.filter(Boolean)) {
+        for (const line of String(raw).split(/\r?\n/).map(value => value.trim()).filter(Boolean)) {
+          const key = value => value.toLocaleLowerCase().replace(/[\p{P}\p{S}\s]+/gu, ' ').trim();
+          const normalized = key(line);
+          if (result.some(existing => key(existing).includes(normalized))) continue;
+          for (let i = result.length - 1; i >= 0; i--) {
+            if (normalized.includes(key(result[i]))) result.splice(i, 1);
+          }
+          result.push(line);
+        }
+      }
+      return result;
+    }
+
+    function mergeInstructionText(value) {
+      return uniqueInstructionLines([value]).join(' ');
+    }
+
+    function extractExplicitTime(value) {
+      if (!value) return null;
+      const match = String(value).match(/\b(?:0?[1-9]|1[0-2])(?::[0-5]\d)?\s*[ap]m\b|\b(?:[01]?\d|2[0-3]):[0-5]\d\b/i);
+      return match ? match[0].trim() : null;
+    }
+
     function renderDashboard() {
       const emptyState = document.getElementById('dash-empty-state');
       const activeContent = document.getElementById('dash-active-content');
+      const trackerCard = document.getElementById('dashboard-pain-tracker-card');
+      const recentDocsCard = document.getElementById('dashboard-recent-docs-card');
+      if (trackerCard && recentDocsCard) recentDocsCard.parentElement.insertBefore(trackerCard, recentDocsCard);
 
       if (state.documents.length === 0 && state.tasks.length === 0) {
         emptyState.classList.remove('hidden');
@@ -1446,70 +1675,160 @@
       activeContent.classList.remove('hidden');
       document.getElementById('dash-overview').classList.remove('hidden');
 
-      const analysis = (state.documents[0] && state.documents[0].analysis) || state.currentDocumentAnalysis;
-      const meds = analysis && Array.isArray(analysis.medication_instructions) ? analysis.medication_instructions : [];
+      const analysis = state.documents.find(doc => doc.analysis)?.analysis || state.currentDocumentAnalysis;
+      const meds = state.medicines || [];
       document.getElementById('dash-meds-count').textContent = `${meds.length} prescribed`;
       const medsBox = document.getElementById('dash-medicines');
-      medsBox.innerHTML = '';
+      medsBox.replaceChildren();
       if (!analysis) {
-        medsBox.innerHTML = '<p class="text-sm text-slate-500">Unable to extract — please verify the original document.</p>';
+        medsBox.textContent = 'Unable to extract — please verify the original document.';
       } else if (!meds.length) {
-        medsBox.innerHTML = '<p class="text-sm text-slate-500">No medicines were listed in the discharge summary.</p>';
+        medsBox.textContent = 'No medicines listed in the discharge summary.';
       } else {
-        meds.slice(0, 4).forEach(med => {
-          const item = document.createElement('div');
-          item.className = 'rounded-xl bg-slate-50 border border-slate-100 p-3';
+        meds.forEach(med => {
           const missing = 'Not specified in discharge summary';
-          item.innerHTML = `<h4 class="text-sm font-bold text-slate-900">${escapeHtml(med.name || missing)} · ${escapeHtml(med.dosage || missing)}</h4><p class="text-xs text-slate-600 mt-1">${escapeHtml(med.route || missing)} · ${escapeHtml(med.frequency || missing)}</p><p class="text-xs text-slate-600 mt-1">Duration: ${escapeHtml(med.duration || missing)}</p><p class="text-xs text-slate-600 mt-1">Instructions: ${escapeHtml(med.verbatim_order || med.patient_explanation || missing)}</p>${med.tips_or_warnings ? `<p class="text-xs text-slate-600 mt-1">${escapeHtml(med.tips_or_warnings)}</p>` : ''}`;
+          const item = document.createElement('article');
+          item.className = 'rounded-xl border border-slate-200 bg-white p-4';
+          const states = Object.values(med.field_states || {});
+          const missingFields = ['name', 'dosage', 'when_to_take', 'frequency', 'duration']
+            .filter(key => !med[key] || med.field_states?.[key] === 'missing');
+          const conflicts = [...(med.conflicts || []), ...Object.entries(med.field_states || {})
+            .filter(([, value]) => value === 'conflicting').map(([key]) => `${key}: Conflicting information found. Please confirm with the treating clinician.`)];
+          const ambiguous = Object.entries(med.field_states || {}).filter(([, value]) => value === 'ambiguous').map(([key]) => `${key}: unclear`);
+          const needsConfirmation = missingFields.length > 0 || states.includes('ambiguous') || states.includes('conflicting') || med.continuation_status === 'unclear' || conflicts.length > 0;
+          const typeLabels = { scheduled: 'Scheduled', as_needed: 'Only when needed', event_based: 'After an event', unspecified: 'Type not specified' };
+          const instructions = uniqueInstructionLines([med.patient_explanation, med.purpose]);
+          item.innerHTML = `
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined mt-1 text-xl text-primary" aria-hidden="true">medication</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h4 class="text-lg font-bold text-slate-950">${escapeHtml(med.name || missing)}${med.dosage ? ` · ${escapeHtml(med.dosage)}` : ''}</h4>
+                  ${needsConfirmation ? '<span class="rounded-full bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-950">Needs confirmation</span>' : ''}
+                </div>
+                ${missingFields.length ? `<p class="mt-2 text-base text-amber-950">${missingFields.map(key => `${escapeHtml(key.replaceAll('_', ' '))}: ${missing}`).join(' · ')}</p>` : ''}
+                ${conflicts.map(text => `<p class="mt-2 text-base font-semibold text-red-900">${escapeHtml(text)}</p>`).join('')}
+                ${ambiguous.map(text => `<p class="mt-2 text-base text-amber-950">${escapeHtml(text)}</p>`).join('')}
+                <div class="mt-3 grid gap-2 text-base text-slate-900">
+                  <p><span aria-hidden="true">◷</span> <strong>When to take:</strong> ${escapeHtml(mergeInstructionText(med.when_to_take) || missing)}</p>
+                  <p><span aria-hidden="true">↻</span> <strong>How often:</strong> ${escapeHtml(mergeInstructionText(med.frequency) || missing)} <span class="font-semibold">(${escapeHtml(typeLabels[med.frequency_type] || typeLabels.unspecified)})</span></p>
+                  <p><span aria-hidden="true">▣</span> <strong>How long:</strong> ${escapeHtml(mergeInstructionText(med.duration) || missing)}</p>
+                </div>
+                ${instructions.length ? `<ul class="mt-3 list-disc space-y-1 pl-5 text-base text-slate-800">${instructions.map(text => `<li>${escapeHtml(text)}</li>`).join('')}</ul>` : `<p class="mt-3 text-base text-slate-800">${escapeHtml(med.name || missing)}</p>`}
+                ${med.maximum_limit || med.tips_or_warnings ? `<div class="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-base text-amber-950"><p class="font-bold"><span aria-hidden="true">⚠</span> Important safety</p>${med.maximum_limit ? `<p class="mt-1"><strong>Maximum limit:</strong> ${escapeHtml(mergeInstructionText(med.maximum_limit))}</p>` : ''}${med.tips_or_warnings ? `<p class="mt-1">${escapeHtml(mergeInstructionText(med.tips_or_warnings))}</p>` : ''}</div>` : ''}
+                ${med.duplicate_count > 1 ? '<p class="mt-2 text-sm text-slate-700">Listed more than once in the discharge papers; counted once.</p>' : ''}
+        <p class="mt-2 text-sm text-slate-600">From: ${escapeHtml(med.document_filename || 'Discharge document')}</p>
+        ${med.source_references?.length ? `<p class="mt-1 text-sm text-slate-600">Source: ${med.source_references.map(escapeHtml).join(', ')}</p>` : ''}
+                <details class="mt-3 rounded-lg border border-slate-300">
+                  <summary class="min-h-11 cursor-pointer px-3 py-2 text-base font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">Show full prescription wording</summary>
+                  <p class="whitespace-pre-wrap break-words border-t border-slate-200 p-3 font-mono text-base text-slate-900">${escapeHtml(med.verbatim_order || missing)}</p>
+                </details>
+              </div>
+            </div>`;
           medsBox.appendChild(item);
         });
       }
 
-      const appointmentsTop = state.tasks.filter(t => (t.type === 'appointment' || !t.type) && !t.completed);
-      const nextApt = appointmentsTop[0];
+      const appointments = state.tasks.filter(t => (t.type === 'appointment' || !t.type) && !t.completed)
+        .sort((a, b) => {
+          if (a.date_sort_key && b.date_sort_key) return a.date_sort_key.localeCompare(b.date_sort_key);
+          if (a.date_sort_key) return -1;
+          if (b.date_sort_key) return 1;
+          return 0;
+        });
       const aptBox = document.getElementById('dash-next-consultation');
-      if (!nextApt) {
-        aptBox.innerHTML = `<p class="text-sm text-slate-500">${analysis ? 'No follow-up consultation listed in the discharge summary.' : 'Unable to extract — please verify the original document.'}</p>`;
+      aptBox.replaceChildren();
+      if (!appointments.length) {
+        aptBox.textContent = analysis ? 'No upcoming consultation listed in the discharge summary.' : 'Unable to extract — please verify the original document.';
       } else {
-        const date = Date.parse(nextApt.date_time);
-        const days = Number.isNaN(date) ? null : Math.ceil((date - Date.now()) / 86400000);
-        aptBox.innerHTML = `<p class="text-lg font-bold text-primary">${escapeHtml(nextApt.date_time || 'Not specified in discharge summary')}</p><p class="text-sm text-slate-700 mt-1">${escapeHtml(nextApt.title || '')}${nextApt.provider ? ` · ${escapeHtml(nextApt.provider)}` : ''}</p>${days !== null && days >= 0 ? `<p class="text-xs text-slate-500 mt-1">In ${days} day${days === 1 ? '' : 's'}</p>` : ''}${nextApt.instructions ? `<p class="text-xs text-slate-600 mt-2">${escapeHtml(nextApt.instructions)}</p>` : ''}`;
+        const nextApt = appointments[0];
+        const dateHeading = document.createElement('p');
+        dateHeading.className = 'text-xl font-bold text-primary';
+        dateHeading.textContent = nextApt.date_time || 'Date not specified in discharge summary.';
+        aptBox.appendChild(dateHeading);
+        const appointmentTime = document.createElement('p');
+        appointmentTime.className = 'text-base font-semibold text-slate-900';
+        appointmentTime.textContent = nextApt.appointment_time || extractExplicitTime(nextApt.date_time) || 'Time not specified';
+        aptBox.appendChild(appointmentTime);
+        if (nextApt.state !== 'stated' || Object.values(nextApt.field_states || {}).some(value => value !== 'stated')) {
+          const status = document.createElement('p'); status.className = 'mt-1 inline-block rounded-full bg-amber-100 px-2.5 py-1 text-sm font-bold text-amber-950'; status.textContent = 'Needs confirmation'; aptBox.appendChild(status);
+        }
+        const provider = document.createElement('p'); provider.className = 'mt-2 text-base font-semibold text-slate-800';
+        provider.textContent = nextApt.provider || nextApt.location || 'Clinic not specified in discharge summary.';
+        aptBox.appendChild(provider);
+        const purpose = document.createElement('p'); purpose.className = 'text-base text-slate-800'; purpose.textContent = nextApt.title || 'Purpose not specified in discharge summary.';
+        aptBox.appendChild(purpose);
+        const preparation = nextApt.preparation_text || nextApt.instructions;
+        if (preparation) { const prep = document.createElement('p'); prep.className = 'mt-2 text-base text-slate-700'; prep.textContent = preparation; aptBox.appendChild(prep); }
+        const handoverButton = document.createElement('button'); handoverButton.type = 'button';
+        handoverButton.className = 'mt-3 min-h-11 rounded-lg border border-primary px-3 py-2 text-base font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
+        handoverButton.textContent = 'Open visit handover pack'; handoverButton.addEventListener('click', () => openHandover('visit'));
+        aptBox.appendChild(handoverButton);
+        if (appointments.length > 1) {
+          const others = document.createElement('details'); others.className = 'mt-3 border-t border-slate-200 pt-2';
+          others.innerHTML = `<summary class="min-h-11 cursor-pointer py-2 text-base font-semibold text-slate-800">All upcoming consultations (${appointments.length})</summary><ol class="space-y-2">${appointments.map((apt, index) => `<li class="text-base text-slate-700">${index + 1}. ${escapeHtml(apt.date_time || 'Date not specified')} · ${escapeHtml(apt.appointment_time || extractExplicitTime(apt.date_time) || 'Time not specified')} · ${escapeHtml(apt.provider || apt.location || 'Clinic not specified')}</li>`).join('')}</ol>`;
+          aptBox.appendChild(others);
+        }
       }
-
-      const completedToday = state.tasks.filter(t => t.completed).length;
-      const totalToday = state.tasks.length;
+      if (!state.autoHandoverShown && appointments.length) {
+        const appointment = appointments.find(item => item.date_sort_key && (item.appointment_time || extractExplicitTime(item.date_time)));
+        if (appointment) {
+          const timeText = appointment.appointment_time || extractExplicitTime(appointment.date_time);
+          const match = timeText.match(/(\d{1,2})(?::(\d{2}))?\s*([ap]m)?/i);
+          if (match) {
+            let hour = Number(match[1]) % 12; if ((match[3] || '').toLowerCase() === 'pm') hour += 12;
+            const when = new Date(`${appointment.date_sort_key}T${String(hour).padStart(2, '0')}:${match[2] || '00'}:00`);
+            const hoursUntil = (when.getTime() - Date.now()) / 3600000;
+            if (hoursUntil >= 0 && hoursUntil <= 48) { state.autoHandoverShown = true; setTimeout(() => openHandover('visit', true), 0); }
+          }
+        }
+      }
+      const careTasks = state.tasks.filter(t => t.type !== 'appointment');
+      const completedToday = careTasks.filter(t => t.completed).length;
+      const totalToday = careTasks.length;
       const checklistPct = totalToday ? Math.round(completedToday / totalToday * 100) : null;
       document.getElementById('dash-checklist-progress').textContent = totalToday ? `${completedToday} of ${totalToday} tasks completed` : 'No care tasks recorded';
       document.getElementById('dash-checklist-pct').textContent = checklistPct === null ? '' : `${checklistPct}%`;
       document.getElementById('dash-checklist-fill').style.width = `${checklistPct || 0}%`;
       const taskBox = document.getElementById('dash-today-tasks');
       taskBox.innerHTML = '';
-      state.tasks.filter(t => t.type !== 'appointment').slice(0, 5).forEach(task => {
-        const row = document.createElement('div'); row.className = 'flex gap-2 text-sm text-slate-700';
-        row.innerHTML = `<span class="text-primary">${task.completed ? '✓' : '○'}</span><span class="${task.completed ? 'line-through text-slate-400' : ''}">${escapeHtml(task.title)}${task.instructions ? ` — ${escapeHtml(task.instructions)}` : ''}</span>`;
+      careTasks.slice(0, 5).forEach(task => {
+        const row = document.createElement('div'); row.className = 'flex items-start gap-2 text-sm text-slate-700';
+        const checkbox = document.createElement('button');
+        checkbox.type = 'button'; checkbox.className = 'text-primary shrink-0';
+        checkbox.setAttribute('aria-pressed', String(!!task.completed));
+        checkbox.setAttribute('aria-label', `${task.completed ? 'Mark incomplete' : 'Mark complete'}: ${task.title || ''}`);
+        checkbox.textContent = task.completed ? '✓' : '○';
+        checkbox.addEventListener('click', () => toggleTask(task.id));
+        const description = document.createElement('span');
+        description.className = task.completed ? 'line-through text-slate-400' : '';
+        description.textContent = `${task.title || ''}${task.instructions ? ` — ${task.instructions}` : ''}`;
+        row.append(checkbox, description);
         taskBox.appendChild(row);
       });
       if (!taskBox.childElementCount) taskBox.innerHTML = '<p class="text-sm text-slate-500">No care tasks listed in the discharge summary.</p>';
 
-      const warningBox = document.getElementById('dash-warning-signs'); warningBox.innerHTML = '';
+      const warningBox = document.getElementById('dash-warning-signs'); warningBox.replaceChildren();
       const warnings = analysis && Array.isArray(analysis.source_warning_signs) ? analysis.source_warning_signs : [];
       if (warnings.length) warnings.forEach(w => {
-        const row = document.createElement('div'); row.className = 'text-xs text-slate-700';
-        row.innerHTML = `<p class="font-semibold">${escapeHtml(w.sign)}</p>${w.action ? `<p class="mt-0.5">${escapeHtml(w.action)}</p>` : ''}`; warningBox.appendChild(row);
+        const tier = (w.severity || 'Tier not specified').toLocaleLowerCase();
+        const color = /immediate|emergency|911/.test(tier) ? 'border-red-300 bg-red-100 text-red-950' : /contact|call/.test(tier) ? 'border-amber-300 bg-amber-100 text-amber-950' : 'border-slate-300 bg-white text-slate-900';
+        const row = document.createElement('article'); row.className = `rounded-xl border p-3 text-base ${color}`;
+        row.innerHTML = `<p class="font-bold"><span aria-hidden="true">⚠</span> ${escapeHtml(w.severity || 'Tier not specified')}</p><p class="mt-1">${escapeHtml(w.sign)}</p>${w.action ? `<p class="mt-1"><strong>Action in document:</strong> ${escapeHtml(w.action)}</p>` : ''}${w.source_references?.length ? `<p class="mt-1 text-sm">Source: ${w.source_references.map(escapeHtml).join(', ')}</p>` : ''}`;
+        warningBox.appendChild(row);
       });
-      else warningBox.innerHTML = `<p class="text-sm text-slate-600">${analysis ? 'No warning signs listed in the discharge summary.' : 'Unable to extract — please verify the original document.'}</p>`;
+      else warningBox.textContent = analysis ? 'No warning signs listed in the discharge summary.' : 'Unable to extract — please verify the original document.';
 
-      // 1. Next Action Banner
-      const pendingTask = state.tasks.find(t => !t.completed);
-      if (pendingTask) {
-        document.getElementById('dash-next-action-title').textContent = pendingTask.title;
-        document.getElementById('dash-next-action-desc').textContent = `${pendingTask.time_of_day || 'Upcoming'} • ${pendingTask.instructions || 'Prescribed recovery action'}`;
-      } else if (state.tasks.length > 0) {
-        document.getElementById('dash-next-action-title').textContent = 'All daily tasks complete!';
-        document.getElementById('dash-next-action-desc').textContent = 'Rest, elevate your limb, and maintain hydration.';
-      } else {
-        document.getElementById('dash-next-action-title').textContent = 'No active tasks';
-        document.getElementById('dash-next-action-desc').textContent = 'Upload paperwork to generate your care tasks.';
+      if (analysis && regionSettings.emergency_number) {
+        const sourceText = warnings.map(w => `${w.sign || ''} ${w.action || ''}`).join(' ');
+        const listedNumbers = [...sourceText.matchAll(/\+?\d[\d\s().-]{5,}\d/g)].map(match => match[0].trim());
+        const regionDigits = regionSettings.emergency_number.replace(/\D/g, '');
+        const differing = [...new Set(listedNumbers.filter(value => value.replace(/\D/g, '').length >= 7 && value.replace(/\D/g, '') !== regionDigits))];
+        if (differing.length) {
+          const note = document.createElement('p'); note.className = 'rounded-xl border border-amber-400 bg-amber-50 p-3 text-base font-semibold text-amber-950';
+          note.textContent = `The discharge summary lists ${differing.join(', ')}; the regional emergency setting is ${regionSettings.emergency_number}. Confirm which number applies.`;
+          warningBox.appendChild(note);
+        }
       }
 
       // 2. Recent Documents list
@@ -1549,14 +1868,14 @@
       document.getElementById('dash-task-counts').textContent = `${completed} of ${total} tasks completed`;
 
       // 4. Follow-up Appointments
-      const appointments = state.tasks.filter(t => t.type === 'appointment' || !t.type);
-      document.getElementById('dash-apt-badge').textContent = `${appointments.length} Scheduled`;
+      const followUpAppointments = state.tasks.filter(t => t.type === 'appointment' || !t.type);
+      document.getElementById('dash-apt-badge').textContent = `${followUpAppointments.length} Scheduled`;
       const aptList = document.getElementById('dash-appointments-list');
       aptList.innerHTML = '';
-      if (appointments.length === 0) {
+      if (followUpAppointments.length === 0) {
         aptList.innerHTML = '<p class="text-xs text-slate-400 py-2">No upcoming appointments scheduled.</p>';
       } else {
-        appointments.slice(0, 2).forEach(apt => {
+        followUpAppointments.slice(0, 2).forEach(apt => {
           const div = document.createElement('div');
           div.className = 'p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1';
           div.innerHTML = `
@@ -1618,12 +1937,9 @@
       // 2. Authoritative backend duplicate check if user is authenticated
       if (state.token) {
         try {
-          const res = await fetch('/api/documents/check-duplicate', {
+          const res = await authenticatedFetch('/api/documents/check-duplicate', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${state.token}`
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename: file.name })
           });
           if (res.ok) {
@@ -1729,7 +2045,7 @@
       btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Extracting Text...</span>';
 
       try {
-        const res = await fetch('/api/documents/extract', {
+        const res = await authenticatedFetch('/api/documents/extract', {
           method: 'POST',
           body: formData
         });
@@ -1738,6 +2054,9 @@
 
         state.intake.extractedText = data.extracted_text;
         state.intake.filename = data.filename || 'discharge_summary.pdf';
+        state.intake.documentId = data.document_id;
+        await loadUserData();
+        if (data.extraction_status !== 'completed') throw new Error(data.error_detail || 'The original was saved, but extraction failed. Retry it from Documents & Intake.');
 
         // Transition to Review Step
         document.getElementById('intake-step-upload').classList.add('hidden');
@@ -1777,44 +2096,80 @@
         formData.append('text', reviewedText);
         formData.append('language', targetLang);
         formData.append('filename', state.intake.filename || 'discharge_document.pdf');
+        formData.append('confirm', 'false');
+        if (state.intake.documentId) formData.append('document_id', state.intake.documentId);
 
-        const headers = {};
-        if (state.token) {
-          headers['Authorization'] = `Bearer ${state.token}`;
-        }
-
-        const res = await fetch('/api/documents/analyze', {
+        const res = await authenticatedFetch('/api/documents/analyze', {
           method: 'POST',
-          headers: headers,
           body: formData
         });
-        const analysis = await res.json();
-        if (!res.ok) throw new Error(analysis.detail || 'Analysis service failed.');
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.detail || 'Analysis service failed.');
 
         hideProcessingOverlay();
-
-        // Refresh user documents and tasks
-        state.currentDocumentAnalysis = analysis;
+        if (!result.review_id) throw new Error('Review could not be started. Please sign in again and retry.');
+        state.pendingReviewId = result.review_id;
+        state.pendingReviewAnalysis = result.analysis;
+        state.intake.documentId = result.document_id;
         await loadUserData();
-        renderDischargeSummary(analysis);
-        cancelReviewStep();
-        navigateTo('summary');
-        showToast('Discharge summary analyzed and saved.');
+        renderPendingReview(result.analysis);
+        document.getElementById('review-confirm-modal').classList.remove('hidden');
       } catch (err) {
         hideProcessingOverlay();
+        await loadUserData();
         alert('Error: ' + err.message);
       }
     }
 
-    async function loadSampleIntoIntake() {
+    function renderPendingReview(analysis) {
+      const container = document.getElementById('review-confirm-content');
+      container.replaceChildren();
+      const sections = [
+        ['Medication instructions', (analysis.medication_instructions || []).map(item => [item.name, item.dosage, item.route, item.frequency, item.when_to_take, item.duration, item.verbatim_order].filter(Boolean).join(' · '))],
+        ['Consultations and care tasks', (analysis.follow_up_tasks || []).map(item => [item.title, item.date_time, item.appointment_time, item.provider, item.instructions].filter(Boolean).join(' · '))],
+        ['Allergies', (analysis.allergies || []).map(item => item.value)],
+        ['Diagnoses and health history', [...(analysis.diagnoses || []), ...(analysis.past_history || [])].map(item => item.value)],
+        ['Warning signs and actions', (analysis.source_warning_signs || []).map(item => [item.sign, item.action].filter(Boolean).join(' — '))],
+        ['Preparation and recovery instructions', [...(analysis.preparation_instructions || []), ...(analysis.recovery_milestones || [])]],
+        ['Needs confirmation', [...(analysis.missing_or_ambiguous_information || []), ...(analysis.conflicting_information || [])]]
+      ];
+      for (const [title, values] of sections) {
+        const card = document.createElement('section'); card.className = 'rounded-xl border border-slate-200 p-3';
+        const heading = document.createElement('h3'); heading.className = 'font-bold'; heading.textContent = title; card.appendChild(heading);
+        if (values.length) {
+          const list = document.createElement('ul'); list.className = 'mt-2 list-disc space-y-1 pl-5 text-sm';
+          values.forEach(value => { const li = document.createElement('li'); li.textContent = value || 'Not specified in discharge summary'; list.appendChild(li); }); card.appendChild(list);
+          const badge = document.createElement('span'); badge.className = 'mt-2 inline-block rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold'; badge.textContent = 'Needs confirmation'; card.appendChild(badge);
+        } else {
+          const missing = document.createElement('p'); missing.className = 'mt-2 text-sm text-slate-600'; missing.textContent = 'Not in document'; card.appendChild(missing);
+        }
+        container.appendChild(card);
+      }
+    }
+
+    async function confirmPendingReview() {
+      if (!state.pendingReviewId) return;
+      const button = document.getElementById('review-confirm-button'); button.disabled = true;
+      const additions = [...document.querySelectorAll('.review-addition')].map(input => ({ section: input.dataset.additionSection, value: input.value.trim() })).filter(item => item.value);
       try {
-        const res = await fetch('/api/sample-text');
-        const data = await res.json();
-        switchIntakeMode('text');
-        document.getElementById('intake-paste-area').value = data.text;
-        showToast('Synthetic sample discharge text loaded.');
-      } catch (e) {
-        console.error(e);
+        const response = await authenticatedFetch('/api/user/documents/confirm-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ review_id: state.pendingReviewId, additions }) });
+        const result = await response.json(); if (!response.ok) throw new Error(result.detail || 'Could not save the reviewed document.');
+        const analysis = state.pendingReviewAnalysis;
+        state.pendingReviewId = null; state.pendingReviewAnalysis = null;
+        document.getElementById('review-confirm-modal').classList.add('hidden');
+        document.querySelectorAll('.review-addition').forEach(input => input.value = '');
+        cancelReviewStep(); await loadUserData();
+        state.currentDocumentAnalysis = analysis; renderDischargeSummary(analysis); navigateTo('summary'); showToast('Reviewed discharge information saved.');
+      } catch (error) { showToast(error.message || 'Could not save review.'); }
+      finally { button.disabled = false; }
+    }
+
+    async function cancelPendingReview() {
+      const reviewId = state.pendingReviewId;
+      state.pendingReviewId = null; state.pendingReviewAnalysis = null;
+      document.getElementById('review-confirm-modal').classList.add('hidden');
+      if (reviewId && state.token) {
+        try { await authenticatedFetch(`/api/user/documents/review/${encodeURIComponent(reviewId)}`, { method: 'DELETE' }); await loadUserData(); } catch (_) { /* Keep the saved document visible if the server is unavailable. */ }
       }
     }
 
@@ -1823,7 +2178,7 @@
       historyList.innerHTML = '';
 
       if (state.documents.length === 0) {
-        historyList.innerHTML = '<p class="text-xs text-slate-400 py-3">No processed documents yet.</p>';
+        historyList.innerHTML = '<p class="text-xs text-slate-400 py-3">No documents uploaded yet.</p>';
         return;
       }
 
@@ -1838,10 +2193,15 @@
             <div class="min-w-0">
               <h4 class="text-xs font-bold text-slate-900 truncate" title="${escapeHtml(doc.filename || doc.title)}">${escapeHtml(doc.title || doc.filename)}</h4>
               <p class="text-[11px] text-slate-500 font-mono mt-0.5 truncate max-w-xs sm:max-w-md" title="${escapeHtml(doc.filename || 'uploaded_doc.pdf')}">${escapeHtml(doc.filename || 'uploaded_doc.pdf')}</p>
+              ${doc.error_detail ? `<p class="text-[10px] text-red-700 mt-1">${escapeHtml(doc.error_detail)}</p>` : ''}
               <p class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(doc.uploaded_at)} • Status: <span class="text-emerald-700 font-semibold">${escapeHtml(doc.status)}</span></p>
             </div>
           </div>
           <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+            ${doc.pending_review_id ? `<button onclick="resumeDocumentReview('${doc.id}')" class="py-1.5 px-3 rounded-xl bg-amber-50 border text-xs font-bold">Resume review</button>` : ''}
+            ${doc.extraction_status === 'failed' ? `<button onclick="retryDocumentProcessing('${doc.id}', 'extraction')" class="py-1.5 px-3 rounded-xl bg-white border text-xs font-bold">Retry extraction</button>` : ''}
+            ${doc.extraction_status === 'completed' && doc.ai_status !== 'completed' && !doc.pending_review_id ? `<button onclick="retryDocumentProcessing('${doc.id}', 'analysis')" class="py-1.5 px-3 rounded-xl bg-white border text-xs font-bold">${doc.ai_status === 'failed' ? 'Retry AI analysis' : 'Analyze for review'}</button>` : ''}
+            <a href="/api/user/documents/${encodeURIComponent(doc.id)}/file" class="py-1.5 px-3 rounded-xl bg-white border text-xs font-bold" target="_blank" rel="noopener">Original</a>
             <button onclick="viewDocumentSummary('${doc.id}')" class="py-1.5 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:text-primary hover:border-primary transition-colors flex items-center gap-1 shadow-xs" title="Open Summary">
               <span class="material-symbols-outlined text-sm">visibility</span>
               <span>Open Summary</span>
@@ -1854,6 +2214,28 @@
         `;
         historyList.appendChild(div);
       });
+    }
+
+    function resumeDocumentReview(docId) {
+      const doc = state.documents.find(item => item.id === docId);
+      if (!doc || !doc.pending_analysis || !doc.pending_review_id) return;
+      state.pendingReviewId = doc.pending_review_id;
+      state.pendingReviewAnalysis = doc.pending_analysis;
+      state.intake.documentId = doc.id;
+      state.intake.filename = doc.filename;
+      renderPendingReview(doc.pending_analysis);
+      document.getElementById('review-confirm-modal').classList.remove('hidden');
+    }
+
+    async function retryDocumentProcessing(docId, stage) {
+      try {
+        const response = await authenticatedFetch(`/api/user/documents/${encodeURIComponent(docId)}/retry-${stage}`, { method: 'POST' });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || `Could not retry ${stage}.`);
+        await loadUserData();
+        if (stage === 'analysis' && result.review_id) resumeDocumentReview(docId);
+        else showToast(stage === 'extraction' ? 'Extraction completed. Retry AI analysis when ready.' : 'Analysis ready for review.');
+      } catch (error) { showToast(error.message || 'Retry failed.'); }
     }
 
     // Document Removal Dialog Controls
@@ -1880,11 +2262,8 @@
       btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span><span>Removing...</span>';
 
       try {
-        const res = await fetch(`/api/user/documents/${docId}`, {
+        const res = await authenticatedFetch(`/api/user/documents/${docId}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${state.token}`
-          }
         });
 
         if (!res.ok) {
@@ -1926,12 +2305,26 @@
 
       document.getElementById('sum-doc-title').textContent = p.procedure_or_diagnosis ? `${p.procedure_or_diagnosis} Summary` : 'Discharge Summary & Rx';
       document.getElementById('sum-facility').textContent = p.hospital_name || 'Hospital Documentation';
-      document.getElementById('sum-record-no').textContent = p.record_number || '#REC-01';
-      document.getElementById('sum-patient-name').textContent = p.patient_name || state.user.name;
-      document.getElementById('sum-attending').textContent = p.attending_physician || 'Attending Physician';
-      document.getElementById('sum-date').textContent = p.discharge_date || 'Recent';
-      document.getElementById('sum-procedure').textContent = p.procedure_or_diagnosis || 'Post-Op';
+      document.getElementById('sum-record-no').textContent = p.record_number || 'Not specified in discharge summary';
+      document.getElementById('sum-patient-name').textContent = p.patient_name || 'Not specified in discharge summary';
+      document.getElementById('sum-attending').textContent = p.attending_physician || 'Not specified in discharge summary';
+      document.getElementById('sum-date').textContent = p.discharge_date || 'Not specified in discharge summary';
+      document.getElementById('sum-procedure').textContent = p.procedure_or_diagnosis || 'Not specified in discharge summary';
       document.getElementById('sum-plain-body').textContent = data.summary || 'Summary unavailable.';
+
+      const healthContext = document.getElementById('sum-health-context'); healthContext.replaceChildren();
+      const factPanel = (title, facts, emptyLabel) => {
+        const card = document.createElement('section'); card.className = 'rounded-xl border border-slate-200 bg-white p-4';
+        const h = document.createElement('h3'); h.className = 'font-bold text-slate-900'; h.textContent = title; card.appendChild(h);
+        const values = facts.length ? facts.map(f => f.value || f) : [emptyLabel];
+        values.forEach(value => { const p = document.createElement('p'); p.className = 'mt-2 text-sm text-slate-700'; p.textContent = value; card.appendChild(p); });
+        healthContext.appendChild(card);
+      };
+      factPanel('Diagnoses', data.diagnoses || [], 'Not specified in discharge summary');
+      const allergyFacts = (data.allergies || []).map(f => f.value);
+      if (!allergyFacts.length) allergyFacts.push(data.allergy_status === 'none_reported' ? 'No known allergies reported in this document.' : 'Not specified in discharge summary');
+      factPanel('Allergies', allergyFacts, 'Not specified in discharge summary');
+      factPanel('Past history', data.past_history || [], 'Not specified in discharge summary');
 
       // Milestone chips
       const mContainer = document.getElementById('sum-milestones-container');
@@ -1951,7 +2344,7 @@
       if (!meds.length) {
         const empty = document.createElement('p');
         empty.className = 'p-4 rounded-xl bg-slate-50 text-sm text-slate-600';
-        empty.textContent = data.is_synthetic_demo ? 'No medicines were listed in this document.' : 'No medicines were extracted. Please verify the original document.';
+        empty.textContent = 'No medicines were extracted. Please verify the original document.';
         medsList.appendChild(empty);
       }
 
@@ -1995,6 +2388,10 @@
             ` : ''}
           </div>
         `;
+        if (med.source_references?.length) {
+          const source = document.createElement('p'); source.className = 'text-xs text-slate-600';
+          source.textContent = `Source: ${med.source_references.join(', ')}`; card.appendChild(source);
+        }
         medsList.appendChild(card);
       });
 
@@ -2025,11 +2422,20 @@
             <span class="font-medium text-slate-800">${escapeHtml(w.sign)}</span>
           </div>
           <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 shrink-0">
-            ${escapeHtml(w.severity || 'Urgent')}
+            ${escapeHtml(w.severity || 'Tier not specified')}
           </span>
         `;
+        if (w.action || w.source_references?.length) {
+          const detail = document.createElement('p'); detail.className = 'mt-2 text-sm text-slate-700';
+          detail.textContent = [w.action ? `Action in document: ${w.action}` : '', w.source_references?.length ? `Source: ${w.source_references.join(', ')}` : ''].filter(Boolean).join(' · ');
+          div.appendChild(detail);
+        }
         wList.appendChild(div);
       });
+      if (!(data.source_warning_signs || []).length) {
+        const empty = document.createElement('p'); empty.className = 'rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700';
+        empty.textContent = 'No warning signs were extracted. Verify the original discharge document.'; wList.appendChild(empty);
+      }
     }
 
     // ----------------------------------------------------
@@ -2078,44 +2484,56 @@
         celebration.classList.add('hidden');
       }
 
-      let filtered = state.tasks;
-      if (state.careFilter === 'pending') {
-        filtered = state.tasks.filter(t => !t.completed);
-      } else if (state.careFilter === 'completed') {
-        filtered = state.tasks.filter(t => t.completed);
-      }
-
-      filtered.forEach(task => {
-        const div = document.createElement('div');
-        div.className = `p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-start gap-3 transition-all ${task.completed ? 'opacity-70 bg-slate-50' : ''}`;
-        div.innerHTML = `
-          <button onclick="toggleTask('${task.id}')" class="mt-0.5 w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-all ${task.completed ? 'bg-secondary text-white' : 'border border-slate-300 hover:border-primary text-transparent'}">
-            <span class="material-symbols-outlined text-sm">check</span>
-          </button>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-baseline justify-between gap-2">
-              <span class="text-xs font-bold ${task.completed ? 'line-through text-slate-400' : 'text-slate-900'}">${escapeHtml(task.title)}</span>
-              <span class="text-[11px] text-slate-400 shrink-0 font-medium">${escapeHtml(task.date_time)}</span>
-            </div>
-            ${task.instructions ? `
-              <p class="text-xs text-slate-500 mt-1">${escapeHtml(task.instructions)}</p>
-            ` : ''}
-            ${task.provider ? `
-              <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">${escapeHtml(task.provider)}</span>
-            ` : ''}
-          </div>
-        `;
-        container.appendChild(div);
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: state.user?.timezone || 'Asia/Kolkata' }).format(new Date());
+      const dueDate = task => {
+        const value = task.date_sort_key || task.date_time || '';
+        const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+        return match ? match[1] : null;
+      };
+      const groupFor = task => {
+        if (task.completed) return 'completed';
+        const due = dueDate(task);
+        if (!due) return 'no_due_date';
+        return due < today ? 'overdue' : 'upcoming';
+      };
+      const labels = { overdue: 'Overdue', upcoming: 'Upcoming', completed: 'Completed', no_due_date: 'No due date' };
+      const groups = ['overdue', 'upcoming', 'completed', 'no_due_date'];
+      const visibleGroups = state.careFilter === 'all' ? groups : [state.careFilter];
+      visibleGroups.forEach(group => {
+        const tasks = state.tasks.filter(task => groupFor(task) === group);
+        if (!tasks.length) return;
+        const section = document.createElement('section'); section.className = 'space-y-2';
+        const heading = document.createElement('h3'); heading.className = 'pt-2 text-sm font-bold text-slate-800'; heading.textContent = `${labels[group]} (${tasks.length})`; section.appendChild(heading);
+        tasks.forEach(task => {
+          const doc = state.documents.find(item => item.id === task.document_id);
+          const div = document.createElement('article');
+          div.className = `p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-start gap-3 ${task.completed ? 'opacity-80 bg-slate-50' : ''}`;
+          div.innerHTML = `
+            <button type="button" aria-label="${task.completed ? 'Reopen' : 'Complete'} ${escapeHtml(task.title)}" aria-pressed="${!!task.completed}" onclick="toggleTask('${escapeHtml(task.id)}')" class="mt-0.5 min-h-8 min-w-8 rounded-md flex items-center justify-center shrink-0 ${task.completed ? 'bg-secondary text-white' : 'border border-slate-300 hover:border-primary text-transparent'}"><span class="material-symbols-outlined text-sm">check</span></button>
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-baseline justify-between gap-2"><span class="text-sm font-bold ${task.completed ? 'line-through text-slate-500' : 'text-slate-900'}">${escapeHtml(task.title || 'Care task')}</span><span class="text-xs font-medium text-slate-600">${escapeHtml(task.date_time || 'No due date recorded')}</span></div>
+              ${task.instructions ? `<p class="text-xs text-slate-600 mt-1">${escapeHtml(task.instructions)}</p>` : ''}
+              ${task.provider ? `<p class="text-xs text-slate-600 mt-1">${escapeHtml(task.provider)}</p>` : ''}
+              <p class="text-[11px] text-slate-500 mt-2">Source: ${escapeHtml(doc?.filename || 'Discharge document unavailable')}</p>
+              ${task.completed_at ? `<p class="text-[11px] text-slate-500 mt-1">Completed ${escapeHtml(task.completed_at)}</p>` : ''}
+            </div>`;
+          section.appendChild(div);
+        });
+        container.appendChild(section);
       });
+      if (!container.childElementCount) {
+        const empty = document.createElement('p'); empty.className = 'rounded-xl bg-white border p-4 text-sm text-slate-600';
+        empty.textContent = state.careFilter === 'all' ? 'No care tasks have been saved yet.' : `No ${labels[state.careFilter].toLowerCase()} tasks.`;
+        container.appendChild(empty);
+      }
     }
 
     async function toggleTask(taskId) {
       if (!state.token) return;
 
       try {
-        const res = await fetch(`/api/user/tasks/${taskId}/toggle`, {
+        const res = await authenticatedFetch(`/api/user/tasks/${taskId}/toggle`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${state.token}` }
         });
         if (res.ok) {
           const data = await res.json();
@@ -2151,79 +2569,223 @@
         }
       });
 
-      // If viewing synthetic demo, reload localized sample
-      if (state.user && state.user.is_demo) {
-        try {
-          const res = await fetch(`/api/sample?lang=${lang}`);
-          if (res.ok) {
-            const data = await res.json();
-            state.currentDocumentAnalysis = data;
-            renderDischargeSummary(data);
-            renderDashboard();
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
+      renderDashboard();
 
       if (notify) {
         showToast(`Language switched to ${lang === 'hi' ? 'Hindi (हिन्दी)' : lang === 'bn' ? 'Bengali (বাংলা)' : 'English'}`);
       }
     }
 
+    function renderReminderDeliveries() {
+      const container = document.getElementById('reminder-delivery-history');
+      container.replaceChildren();
+      if (!state.reminderDeliveries?.length) return;
+      const heading = document.createElement('p'); heading.className = 'font-semibold'; heading.textContent = 'Recent reminder delivery status'; container.appendChild(heading);
+      state.reminderDeliveries.slice(0, 5).forEach(delivery => {
+        const line = document.createElement('p');
+        line.textContent = `${delivery.scheduled_send_date}: ${delivery.delivery_status}${delivery.error_details ? ` — ${delivery.error_details}` : ''}`;
+        container.appendChild(line);
+      });
+    }
+
     async function saveProfilePreferences() {
       const name = document.getElementById('pref-display-name').value.trim();
       const preferred_language = document.getElementById('pref-language').value;
+      const email_notifications_enabled = document.getElementById('pref-email-reminders').checked;
+      const timezone = document.getElementById('pref-timezone').value.trim() || 'Asia/Kolkata';
 
       try {
-        const res = await fetch('/api/user/profile', {
+        const res = await authenticatedFetch('/api/user/profile', {
           method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${state.token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ name, preferred_language })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, preferred_language, email_notifications_enabled, timezone })
         });
         const data = await res.json();
         if (res.ok) {
           state.user = data.user;
           state.currentLanguage = preferred_language;
-          renderAppShell();
+          document.getElementById('dash-greeting').textContent = `Welcome back, ${state.user.name.split(' ')[0]}`;
+          document.getElementById('user-sidebar-name').textContent = state.user.name;
+          document.getElementById('profile-name-display').textContent = state.user.name;
+          document.getElementById('profile-email-display').textContent = state.user.email;
+          document.getElementById('email-verification-status').textContent = state.user.email_verified ? `Verified: ${state.user.email}` : `Not verified: ${state.user.email}`;
+          setAppLanguage(preferred_language, false);
           showToast('Profile preferences updated.');
+        } else {
+          showToast(data.detail || 'Could not save preferences.');
         }
       } catch (e) {
-        console.error(e);
+        showToast(e.message || 'Could not save preferences.');
       }
     }
 
-    // ----------------------------------------------------
-    // Comfort & Pain Score
-    // ----------------------------------------------------
-    function setPainScore(score) {
-      document.querySelectorAll('.pain-chip').forEach((c, idx) => {
-        if (idx + 1 === score) {
-          c.className = 'pain-chip w-9 h-9 rounded-xl bg-primary text-white text-xs font-bold shadow-sm';
-        } else {
-          c.className = 'pain-chip w-9 h-9 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-teal-100 transition-colors';
-        }
-      });
-
-      const notes = {
-        1: 'Minimal discomfort. Keep resting comfortably.',
-        2: 'Manageable comfort level.',
-        3: 'Moderate discomfort. Keep leg elevated above heart level and apply cold pack.',
-        4: 'Noticeable discomfort. Take prescribed pain reliever as directed.',
-        5: 'Elevate limb, rest in neutral extension, apply ice for 20 minutes.',
-        6: 'Moderate-to-high pain. Consider scheduled medication.',
-        7: 'Substantial pain. Ensure you are resting with limb elevated.',
-        8: 'Persistent severe pain. Contact clinic triage if medication does not help.',
-        9: 'Severe pain. Contact orthopedic triage immediately.',
-        10: 'Unbearable pain. Please seek immediate medical attention.'
-      };
-      document.getElementById('pain-feedback-text').textContent = `Score ${score}: ${notes[score]}`;
+    async function requestEmailVerification() {
+      const button = document.getElementById('verify-email-button'); button.disabled = true;
+      try {
+        const response = await authenticatedFetch('/api/auth/email-verification', { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Could not send verification email.');
+        showToast(data.message);
+      } catch (error) { showToast(error.message || 'Could not send verification email.'); }
+      finally { button.disabled = false; }
     }
 
     // ----------------------------------------------------
+    function handoverCard(title, entries) {
+      const card = document.createElement('section'); card.className = 'rounded-xl border border-slate-200 bg-white p-4';
+      const heading = document.createElement('h3'); heading.className = 'text-base font-bold'; heading.textContent = title; card.appendChild(heading);
+      const list = document.createElement('ul'); list.className = 'mt-2 list-disc space-y-1 pl-5 text-sm text-slate-800';
+      if (!entries.length) entries = ['Not specified in discharge summary'];
+      entries.forEach(entry => { const li = document.createElement('li'); li.textContent = entry; list.appendChild(li); }); card.appendChild(list);
+      const label = document.createElement('label'); label.className = 'mt-3 flex min-h-11 items-center gap-2 border-t border-slate-100 pt-2 text-sm font-semibold text-slate-700';
+      const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'handover-reviewed h-5 w-5 accent-teal-700'; checkbox.dataset.section = title; checkbox.addEventListener('change', updateHandoverProgress);
+      label.append(checkbox, document.createTextNode('Reviewed together')); card.appendChild(label);
+      return card;
+    }
+
+    function updateHandoverProgress() {
+      const checkboxes = [...document.querySelectorAll('.handover-reviewed')];
+      const checked = checkboxes.filter(input => input.checked).length;
+      const allReviewed = checkboxes.length > 0 && checked === checkboxes.length;
+      document.getElementById('handover-teachback').classList.toggle('hidden', state.handoverKind !== 'caregiver' || !allReviewed);
+      const answers = [...document.querySelectorAll('.handover-answer')];
+      const answered = answers.filter(input => input.value).length;
+      const total = checkboxes.length + (state.handoverKind === 'caregiver' ? 3 : 0);
+      const done = checked + (state.handoverKind === 'caregiver' ? answered : 0);
+      document.getElementById('handover-progress').textContent = `Step ${Math.min(done + 1, total)} of ${total} · ${checked} of ${checkboxes.length} sections reviewed${state.handoverKind === 'caregiver' && allReviewed ? ` · ${answered} of 3 teach-back questions answered` : ''}`;
+    }
+
+    function openHandover(kind = 'visit', automatic = false) {
+      state.handoverKind = kind;
+      const analysis = state.documents[0]?.analysis || state.currentDocumentAnalysis || {};
+      const tasks = state.tasks || [];
+      const medicines = analysis.medication_instructions || [];
+      const medicineLines = medicines.map(m => [m.name, m.dosage, m.route, m.frequency, m.when_to_take, m.duration, m.verbatim_order, m.source_references?.length ? `Source: ${m.source_references.join(', ')}` : 'Source section not identified'].filter(Boolean).join(' · '));
+      const apptLines = tasks.filter(t => t.type === 'appointment' || !t.type).map(t => [t.date_time || 'Date not specified', t.appointment_time || extractExplicitTime(t.date_time) || 'Time not specified', t.provider || t.location, t.title, t.preparation_text || t.instructions, t.source_references?.length ? `Source: ${t.source_references.join(', ')}` : 'Source section not identified'].filter(Boolean).join(' · '));
+      const warningLines = (analysis.source_warning_signs || []).map(w => [w.sign, w.severity, w.action, w.source_references?.length ? `Source: ${w.source_references.join(', ')}` : 'Source section not identified'].filter(Boolean).join(' · '));
+      const openItems = [...(analysis.missing_or_ambiguous_information || []), ...(analysis.conflicting_information || []), ...medicines.filter(m => m.state === 'ambiguous' || m.state === 'conflicting' || Object.values(m.field_states || {}).some(value => value !== 'stated')).map(m => `${m.name || 'Medication'}: ${m.conflicts?.join('; ') || 'Some instructions are missing or unclear.'}`)];
+      const tracker = [
+        ...state.painEntries.slice(0, 8).map(e => `${new Date(e.created_at).toLocaleString()}: self-reported comfort score ${e.score}/10${e.note ? `; ${e.note}` : ''}`),
+        ...tasks.filter(t => t.type !== 'appointment').map(t => `${t.completed ? 'Completed' : 'Not marked complete'}: ${t.title}`)
+      ];
+      const container = document.getElementById('handover-content'); container.replaceChildren();
+      container.append(handoverCard('Source documents', state.documents.map(doc => `${doc.filename || doc.title} · ${doc.uploaded_at}`)));
+      container.append(handoverCard('Patient and diagnoses', [analysis.patient_info?.patient_name, ...(analysis.diagnoses || []).map(f => f.value), ...(analysis.past_history || []).map(f => `History: ${f.value}`)].filter(Boolean)));
+      container.append(handoverCard('Medication instructions', medicineLines));
+      container.append(handoverCard('Next consultations and preparation', apptLines));
+      container.append(handoverCard('Allergies', (analysis.allergies || []).map(f => f.value).concat(analysis.allergy_status === 'not_in_document' ? ['Not specified in discharge summary'] : [])));
+      container.append(handoverCard('Warning signs and actions from the document', warningLines));
+      container.append(handoverCard('Needs confirmation / open items', openItems));
+      container.append(handoverCard('Patient-added notes', (analysis.user_added_information || []).map(f => f.value)));
+      container.append(handoverCard('Notes since discharge (self-reported)', tracker));
+      container.append(handoverCard('Emergency contact', [regionSettings.emergency_number ? `Configured emergency number: ${regionSettings.emergency_number}` : 'Emergency number is not configured.']));
+
+      const teachback = document.getElementById('handover-teachback');
+      teachback.classList.toggle('hidden', kind !== 'caregiver');
+      if (kind === 'caregiver') renderHandoverQuestions(analysis, tasks);
+      updateHandoverProgress();
+      const incoming = document.getElementById('handover-incoming'); incoming.value = kind === 'visit' ? 'Clinician' : '';
+      const finish = document.querySelector('#view-handover button[onclick="finishHandover()"]'); finish.textContent = kind === 'visit' ? 'Save visit preparation' : 'Complete caregiver handover';
+      const hist = document.querySelector('#handover-history > div'); hist.replaceChildren();
+      (state.handoverEvents || []).forEach(event => { const row = document.createElement('p'); row.textContent = `${new Date(event.created_at).toLocaleString()}: ${event.kind} handover, ${event.outgoing_name} to ${event.incoming_name}${event.teach_back_passed ? ' · teach-back complete' : ''}`; hist.appendChild(row); });
+      navigateTo('handover');
+      if (automatic) showToast('Your upcoming appointment is within 48 hours. Review the visit pack.');
+    }
+
+    function renderHandoverQuestions(analysis, tasks) {
+      const warning = (analysis.source_warning_signs || []).find(item => item.action || item.sign);
+      const missed = (analysis.medication_instructions || []).find(item => /missed dose/i.test(`${item.tips_or_warnings || ''} ${item.verbatim_order || ''}`));
+      const next = tasks.filter(t => t.type === 'appointment' || !t.type).sort((a,b) => (a.date_sort_key || '').localeCompare(b.date_sort_key || ''))[0];
+      const prompts = [
+        ['What warning sign or action is recorded?', warning ? `${warning.sign}${warning.action ? ` — ${warning.action}` : ''}` : 'Not specified in discharge summary'],
+        ['What missed-dose instruction is recorded?', missed ? (missed.tips_or_warnings || missed.verbatim_order) : 'Not specified in discharge summary'],
+        ['When is the next consultation?', next ? [next.date_time, next.appointment_time || extractExplicitTime(next.date_time), next.provider].filter(Boolean).join(' · ') : 'Not specified in discharge summary']
+      ];
+      const wrap = document.getElementById('handover-questions'); wrap.replaceChildren();
+      prompts.forEach(([question, expected], index) => {
+        const label = document.createElement('label'); label.className = 'block text-sm font-semibold'; label.textContent = question;
+        const select = document.createElement('select'); select.className = 'handover-answer mt-1 min-h-11 w-full rounded-lg border bg-white p-2'; select.dataset.expected = expected;
+        select.addEventListener('change', updateHandoverProgress);
+        const blank = document.createElement('option'); blank.value = ''; blank.textContent = 'Choose the documented answer'; select.appendChild(blank);
+        const option = document.createElement('option'); option.value = expected; option.textContent = expected; select.appendChild(option);
+        const absent = document.createElement('option'); absent.value = '__not_in_document__'; absent.textContent = 'Not specified in discharge summary'; select.appendChild(absent);
+        label.appendChild(select); wrap.appendChild(label);
+      });
+    }
+
+    async function finishHandover() {
+      const kind = state.handoverKind;
+      const reviewed = [...document.querySelectorAll('.handover-reviewed')];
+      if (kind === 'caregiver' && (!reviewed.length || reviewed.some(input => !input.checked))) { showToast('Review each handover section before continuing.'); return; }
+      const answers = [...document.querySelectorAll('.handover-answer')];
+      const passed = kind !== 'caregiver' || (answers.length === 3 && answers.every(select => select.value && (select.value === select.dataset.expected || (select.value === '__not_in_document__' && select.dataset.expected === 'Not specified in discharge summary'))));
+      if (!passed) {
+        answers.forEach(select => {
+          const expected = select.dataset.expected;
+          const feedback = select.parentElement.querySelector('.teachback-feedback') || document.createElement('p');
+          feedback.className = 'teachback-feedback mt-1 text-sm font-medium text-amber-900';
+          feedback.textContent = select.value ? `Review this source-backed answer: ${expected}` : 'Choose the answer recorded in the discharge document.';
+          select.parentElement.appendChild(feedback);
+        });
+        showToast('Review the relevant source section and answer each teach-back question.'); return;
+      }
+      document.querySelectorAll('.teachback-feedback').forEach(item => item.remove());
+      const outgoing = document.getElementById('handover-outgoing').value.trim() || state.user?.name || 'Patient';
+      const incoming = document.getElementById('handover-incoming').value.trim() || 'Clinician';
+      const notes = [document.getElementById('handover-notes').value.trim(), document.getElementById('handover-doc-location').value.trim() ? `Original documents: ${document.getElementById('handover-doc-location').value.trim()}` : ''].filter(Boolean).join('\n');
+      try {
+        const response = await authenticatedFetch('/api/user/handover/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, outgoing_name: outgoing, incoming_name: incoming, sections_read: reviewed.filter(input => input.checked).map(input => input.dataset.section), teach_back_passed: passed, notes }) });
+        if (!response.ok) throw new Error('Could not save handover history.');
+        state.handoverEvents = (await response.json()).events || []; openHandover(kind); showToast('Handover saved.');
+      } catch (error) { showToast(error.message || 'Could not save handover.'); }
+    }
+
+    function printHandover() { window.print(); }
+
+    async function shareHandover() {
+      const analysis = state.documents[0]?.analysis || state.currentDocumentAnalysis || {};
+      const summary = [
+        'DischargeBuddy handover — not medical advice. Original discharge document and treating clinician take precedence.',
+        `Patient: ${analysis.patient_info?.patient_name || 'Not specified in discharge summary'}`,
+        `Medicines: ${(analysis.medication_instructions || []).map(m => [m.name, m.dosage, m.frequency, m.when_to_take].filter(Boolean).join(' · ')).join('; ') || 'Not specified in discharge summary'}`,
+        `Consultations: ${state.tasks.filter(t => t.type === 'appointment' || !t.type).map(t => [t.date_time, t.appointment_time, t.provider, t.title].filter(Boolean).join(' · ')).join('; ') || 'Not specified in discharge summary'}`,
+        `Warnings: ${(analysis.source_warning_signs || []).map(w => [w.sign, w.action].filter(Boolean).join(' — ')).join('; ') || 'Not specified in discharge summary'}`,
+        `Emergency number: ${regionSettings.emergency_number || 'Not configured'}`
+      ].join('\n');
+      try {
+        if (navigator.share) await navigator.share({ title: 'Discharge care handover', text: summary });
+        else { await navigator.clipboard.writeText(summary); showToast('Handover copied to clipboard.'); }
+      } catch (error) { if (error.name !== 'AbortError') showToast('Could not share handover.'); }
+    }
+
+    // Persist the existing patient-entered comfort score without clinical interpretation.
+    function renderPainTracker() {
+      const lastEntry = state.painEntries[0];
+      document.querySelectorAll(".pain-chip").forEach((chip) => {
+        const active = lastEntry && Number(chip.textContent) === lastEntry.score;
+        chip.className = `pain-chip min-w-11 min-h-11 rounded-xl text-base font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? "bg-primary text-white" : "bg-slate-100 text-slate-700 hover:bg-teal-100"}`;
+      });
+      document.getElementById("pain-feedback-text").textContent = lastEntry
+        ? `Last saved comfort score: ${lastEntry.score}/10.`
+        : "No comfort scores recorded.";
+    }
+
+    async function setPainScore(score) {
+      try {
+        const response = await authenticatedFetch("/api/user/tracker/pain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ score })
+        });
+        if (!response.ok) throw new Error("Could not save score");
+        const data = await response.json();
+        state.painEntries = data.entries || [];
+        renderPainTracker();
+      } catch (error) {
+        document.getElementById("pain-feedback-text").textContent = "This comfort score could not be saved. Try again.";
+      }
+    }
+
     // Processing Overlay & Toast Helpers
     // ----------------------------------------------------
     function showProcessingOverlay() {

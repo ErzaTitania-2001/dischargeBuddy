@@ -43,11 +43,11 @@ def extract_stem_without_copy_markers(normalized: str) -> str:
     """
     Removes common copy/duplicate markers from the end of a normalized filename.
     Examples:
-    - 'sarah miller discharge (1)' -> 'sarah miller discharge'
-    - 'sarah miller discharge 1' -> 'sarah miller discharge'
-    - 'sarah miller discharge copy' -> 'sarah miller discharge'
-    - 'sarah miller discharge (copy)' -> 'sarah miller discharge'
-    - 'sarah miller discharge copy 1' -> 'sarah miller discharge'
+    - 'discharge document (1)' -> 'discharge document'
+    - 'discharge document 1' -> 'discharge document'
+    - 'discharge document copy' -> 'discharge document'
+    - 'discharge document (copy)' -> 'discharge document'
+    - 'discharge document copy 1' -> 'discharge document'
     """
     if not normalized:
         return ""
