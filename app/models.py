@@ -57,11 +57,24 @@ class WarningSign(BaseModel):
     source_document_id: Optional[str] = None
     state: Literal["stated", "missing", "ambiguous", "conflicting"] = "stated"
 
+class InvestigationResult(BaseModel):
+    name: Optional[str] = None
+    date: Optional[str] = None
+    result: Optional[str] = None
+    source_references: List[str] = Field(default_factory=list)
+    source_document_id: Optional[str] = None
+    state: Literal["stated", "missing", "ambiguous", "conflicting"] = "stated"
+
 class PatientMetadata(BaseModel):
     patient_name: str = Field("Not specified in discharge summary", description="Patient name if documented")
+    age_or_date_of_birth: str = Field("Not specified in discharge summary", description="Only explicitly documented age or date of birth")
+    sex: str = Field("Not specified in discharge summary", description="Sex only if explicitly documented")
+    contact_information: str = Field("Not specified in discharge summary", description="Contact information only if included in source")
     hospital_name: str = Field("Not specified in discharge summary", description="Hospital name")
     record_number: str = Field("Not specified in discharge summary", description="MRN or Document ID")
     attending_physician: str = Field("Not specified in discharge summary", description="Attending physician")
+    admission_date: str = Field("Not specified in discharge summary", description="Admission date, if documented")
+    admission_reason: str = Field("Not specified in discharge summary", description="Reason for admission, if documented")
     discharge_date: str = Field("Not specified in discharge summary", description="Date of discharge")
     procedure_or_diagnosis: str = Field("Not specified in discharge summary", description="Procedure or primary diagnosis")
 
@@ -72,6 +85,7 @@ class DischargeAnalysisResponse(BaseModel):
     medication_instructions: List[MedicationInstruction] = Field(default_factory=list)
     follow_up_tasks: List[FollowUpTask] = Field(default_factory=list)
     source_warning_signs: List[WarningSign] = Field(default_factory=list)
+    investigations: List[InvestigationResult] = Field(default_factory=list)
     diagnoses: List[ExtractedFact] = Field(default_factory=list)
     hospital_course: Optional[str] = None
     allergies: List[ExtractedFact] = Field(default_factory=list)
@@ -149,6 +163,21 @@ class HandoverEventRequest(BaseModel):
     sections_read: List[str] = Field(default_factory=list)
     teach_back_passed: bool = False
     notes: Optional[str] = None
+
+class ConsultationNotesRequest(BaseModel):
+    consultation_id: str = Field("upcoming", max_length=200)
+    reason: str = Field("", max_length=3000)
+    concerns: str = Field("", max_length=6000)
+    observations: str = Field("", max_length=6000)
+    questions: str = Field("", max_length=6000)
+    pending_investigations: str = Field("", max_length=3000)
+    medication_questions: str = Field("", max_length=3000)
+    additional_notes: str = Field("", max_length=6000)
+
+class MedicalHistoryExportRequest(BaseModel):
+    sections: List[str] = Field(default_factory=lambda: ["patient", "history", "allergies", "medications", "followups", "care", "consultation", "investigations", "sources"])
+    reviewed: bool = False
+    consultation_id: str = Field("upcoming", max_length=200)
 
 class ReviewConfirmRequest(BaseModel):
     review_id: str = Field(..., min_length=1)

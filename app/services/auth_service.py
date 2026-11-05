@@ -214,6 +214,23 @@ class UserStore:
                     token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     expires_at TEXT NOT NULL, created_at TEXT NOT NULL, used_at TEXT
                 );
+                CREATE TABLE IF NOT EXISTS consultation_notes (
+                    id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    consultation_id TEXT NOT NULL, data_json TEXT NOT NULL, updated_at TEXT NOT NULL,
+                    UNIQUE(account_id, consultation_id)
+                );
+                CREATE TABLE IF NOT EXISTS medical_exports (
+                    id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    sections_json TEXT NOT NULL, consultation_id TEXT NOT NULL DEFAULT 'upcoming',
+                    pdf_data BYTEA, generated_at TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS upload_confirmation_deliveries (
+                    id TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+                    document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+                    appointment_id TEXT NOT NULL, recipient TEXT NOT NULL, delivery_status TEXT NOT NULL,
+                    created_at TEXT NOT NULL, sent_at TEXT, error_details TEXT,
+                    UNIQUE(document_id, appointment_id)
+                );
             """)
             if self.database_url:
                 columns = {row["column_name"] for row in db.execute(
@@ -233,9 +250,20 @@ class UserStore:
                 reminder_columns = {row["name"] for row in db.execute("PRAGMA table_info(reminder_deliveries)").fetchall()}
             if "retry_deadline" not in reminder_columns:
                 db.execute("ALTER TABLE reminder_deliveries ADD COLUMN retry_deadline TEXT")
+            if self.database_url:
+                export_columns = {row["column_name"] for row in db.execute(
+                    "SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='medical_exports'").fetchall()}
+            else:
+                export_columns = {row["name"] for row in db.execute("PRAGMA table_info(medical_exports)").fetchall()}
+            if "consultation_id" not in export_columns:
+                db.execute("ALTER TABLE medical_exports ADD COLUMN consultation_id TEXT NOT NULL DEFAULT 'upcoming'")
+            if "pdf_data" not in export_columns:
+                db.execute("ALTER TABLE medical_exports ADD COLUMN pdf_data BYTEA")
             db.execute("INSERT INTO schema_migrations(version, applied_at) VALUES(1, ?) ON CONFLICT(version) DO NOTHING", (self._now(),))
             db.execute("INSERT INTO schema_migrations(version, applied_at) VALUES(2, ?) ON CONFLICT(version) DO NOTHING", (self._now(),))
             db.execute("INSERT INTO schema_migrations(version, applied_at) VALUES(3, ?) ON CONFLICT(version) DO NOTHING", (self._now(),))
+            db.execute("INSERT INTO schema_migrations(version, applied_at) VALUES(4, ?) ON CONFLICT(version) DO NOTHING", (self._now(),))
+            db.execute("INSERT INTO schema_migrations(version, applied_at) VALUES(5, ?) ON CONFLICT(version) DO NOTHING", (self._now(),))
 
     @staticmethod
     def _now() -> str:
@@ -629,6 +657,74 @@ class UserStore:
         with self._connect() as db:
             rows = db.execute("SELECT h.data_json FROM handover_events h JOIN users u ON h.account_id=u.account_id WHERE u.id=? ORDER BY h.created_at DESC", (user_id,)).fetchall()
             return [json.loads(row["data_json"]) for row in rows]
+
+    def get_consultation_notes(self, user_id: str, consultation_id: str = "upcoming") -> dict:
+        with self._connect() as db:
+            row = db.execute("SELECT n.data_json FROM consultation_notes n JOIN users u ON n.account_id=u.account_id WHERE u.id=? AND n.consultation_id=?",
+                             (user_id, consultation_id)).fetchone()
+            return json.loads(row["data_json"]) if row else {}
+
+    def save_consultation_notes(self, user_id: str, consultation_id: str, notes: dict) -> dict:
+        with self._connect() as db:
+            user = db.execute("SELECT account_id FROM users WHERE id=?", (user_id,)).fetchone()
+            if not user:
+                raise ValueError("User not found")
+            db.execute("""INSERT INTO consultation_notes(id,account_id,consultation_id,data_json,updated_at)
+                VALUES(?,?,?,?,?) ON CONFLICT(account_id,consultation_id) DO UPDATE SET
+                data_json=excluded.data_json,updated_at=excluded.updated_at""",
+                (f"consult-{user['account_id']}-{consultation_id}", user["account_id"], consultation_id,
+                 json.dumps(notes), self._now()))
+        return notes
+
+    def record_medical_export(self, user_id: str, sections: List[str], consultation_id: str, pdf_data: bytes) -> str:
+        export_id = f"export-{uuid.uuid4().hex}"
+        with self._connect() as db:
+            user = db.execute("SELECT account_id FROM users WHERE id=?", (user_id,)).fetchone()
+            if not user:
+                raise ValueError("User not found")
+            db.execute("INSERT INTO medical_exports(id,account_id,sections_json,consultation_id,pdf_data,generated_at) VALUES(?,?,?,?,?,?)",
+                       (export_id, user["account_id"], json.dumps(sections), consultation_id, pdf_data, self._now()))
+        return export_id
+
+    def get_medical_exports(self, user_id: str) -> List[dict]:
+        with self._connect() as db:
+            rows = db.execute("SELECT e.id,e.sections_json,e.consultation_id,e.generated_at FROM medical_exports e JOIN users u ON e.account_id=u.account_id WHERE u.id=? ORDER BY e.generated_at DESC LIMIT 50", (user_id,)).fetchall()
+            return [{**dict(row), "sections": json.loads(row["sections_json"])} for row in rows]
+
+    def get_medical_export(self, user_id: str, export_id: str) -> Optional[dict]:
+        with self._connect() as db:
+            row = db.execute("SELECT e.* FROM medical_exports e JOIN users u ON e.account_id=u.account_id WHERE u.id=? AND e.id=?", (user_id, export_id)).fetchone()
+            if not row:
+                return None
+            result = dict(row)
+            result["sections"] = json.loads(result.pop("sections_json"))
+            return result
+
+    def claim_upload_confirmation(self, account_id: str, document_id: str, appointment_id: str, recipient: str) -> Optional[dict]:
+        now = self._now()
+        delivery_id = f"upload-email-{uuid.uuid4().hex}"
+        with self._connect() as db:
+            result = db.execute("""INSERT INTO upload_confirmation_deliveries
+                (id,account_id,document_id,appointment_id,recipient,delivery_status,created_at)
+                VALUES(?,?,?,?,?,'sending',?) ON CONFLICT(document_id,appointment_id) DO NOTHING""",
+                (delivery_id, account_id, document_id, appointment_id, recipient, now))
+            if result.rowcount == 0:
+                return None
+            return {"id": delivery_id, "account_id": account_id, "document_id": document_id,
+                    "appointment_id": appointment_id, "recipient": recipient}
+
+    def finish_upload_confirmation(self, delivery_id: str, status: str, error: Optional[str] = None) -> None:
+        with self._connect() as db:
+            db.execute("UPDATE upload_confirmation_deliveries SET delivery_status=?,sent_at=?,error_details=? WHERE id=?",
+                       (status, self._now() if status == "sent" else None, error, delivery_id))
+
+    def get_upload_confirmation_deliveries(self, user_id: str) -> List[dict]:
+        with self._connect() as db:
+            rows = db.execute("""SELECT n.id,n.document_id,n.appointment_id,n.recipient,n.delivery_status,
+                n.created_at,n.sent_at,n.error_details FROM upload_confirmation_deliveries n
+                JOIN users u ON n.account_id=u.account_id WHERE u.id=? ORDER BY n.created_at DESC LIMIT 50""",
+                (user_id,)).fetchall()
+            return [dict(row) for row in rows]
 
     def add_pending_review(self, user_id: str, review: dict) -> str:
         review_id = f"review-{uuid.uuid4().hex}"

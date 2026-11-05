@@ -19,6 +19,8 @@ CORE SAFETY AND CLINICAL PROTOCOLS:
 8. PROVENANCE: For every extracted item, include source_references only when the source includes an explicit page marker or section heading. Do not invent page numbers or section names.
 9. MEDICINE CLASSIFICATION: frequency_type is scheduled, as_needed, event_based, or unspecified only when supported by the source. Do not infer a schedule. Use continuation_status only if the document explicitly states whether treatment continues or stops.
 10. APPOINTMENTS: Keep date and time separate. appointment_time is null unless an explicit time appears. date_sort_key is YYYY-MM-DD only when the source gives an unambiguous year, month, and day.
+11. INVESTIGATIONS: Extract only investigations explicitly present, preserving the exact recorded date and result text. Do not calculate, normalize units, or interpret findings.
+12. DEMOGRAPHICS: Copy patient name, age/date of birth, sex, contact details, record number, admission details, and treating clinicians only when explicitly stated. Never calculate age or infer a demographic value.
 
 TARGET LANGUAGE: {target_language_name} ({target_language_code}).
 Translate all explanations, summaries, and patient directions into {target_language_name}.

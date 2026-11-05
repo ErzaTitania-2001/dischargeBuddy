@@ -9,7 +9,7 @@ from typing import Optional, List
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Header, Cookie, Response, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 
 from app.config import settings
 from app.models import (
@@ -26,7 +26,9 @@ from app.models import (
     DeleteDocumentResponse,
     PainEntryRequest,
     HandoverEventRequest,
-    ReviewConfirmRequest
+    ReviewConfirmRequest,
+    ConsultationNotesRequest,
+    MedicalHistoryExportRequest
 )
 from app.services.pdf_service import extract_text_from_pdf
 from app.services.meta_spark_service import analyze_discharge_text
@@ -36,6 +38,10 @@ from app.services.auth_service import user_store, User, DocumentRecord
 from app.services.duplicate_detector import check_for_duplicate
 from app.services.reminder_service import (dispatch_due_reminders, send_brevo_email,
     create_verification_token, verify_email_token)
+from app.services.medical_history_pdf import build_medical_history_pdf
+from email.utils import parseaddr
+from html import escape
+from io import BytesIO
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -69,6 +75,8 @@ def attach_source_document(analysis: DischargeAnalysisResponse, doc_id: str) -> 
     for item in analysis.follow_up_tasks:
         item.document_id = doc_id
     for item in analysis.source_warning_signs:
+        item.source_document_id = doc_id
+    for item in analysis.investigations:
         item.source_document_id = doc_id
     for group in (analysis.diagnoses, analysis.allergies, analysis.past_history, analysis.user_added_information):
         for item in group:
@@ -300,6 +308,10 @@ async def get_user_appointments(user: User = Depends(require_current_user)):
 async def get_user_reminders(user: User = Depends(require_current_user)):
     return {"deliveries": user_store.get_reminder_deliveries(user.id)}
 
+@app.get("/api/user/upload-confirmations")
+async def get_upload_confirmation_history(user: User = Depends(require_current_user)):
+    return {"deliveries": user_store.get_upload_confirmation_deliveries(user.id)}
+
 @app.post("/api/internal/notifications/dispatch")
 def dispatch_scheduled_notifications(authorization: Optional[str] = Header(None)):
     """Cloud Scheduler OIDC endpoint; only the configured service account may invoke it."""
@@ -374,6 +386,223 @@ async def get_handover_history(user: User = Depends(require_current_user)):
 async def save_handover_event(payload: HandoverEventRequest, user: User = Depends(require_current_user)):
     event = user_store.add_handover_event(user.id, payload.model_dump())
     return {"event": event, "events": user_store.get_handover_events(user.id)}
+
+
+def _medical_history_payload(user: User, consultation_id: str = "upcoming") -> dict:
+    documents = user_store.get_documents(user.id)
+    completed = [doc for doc in documents if doc.analysis]
+    tasks = user_store.get_tasks(user.id)
+    notes = user_store.get_consultation_notes(user.id, consultation_id)
+    previous_consultation_notes = [event for event in user_store.get_handover_events(user.id) if event.get("kind") == "visit" and event.get("notes")]
+    documents_by_id = {doc.id: doc for doc in completed}
+    patient_names, clinicians = [], []
+    history, medicines, care, investigations, allergies = [], [], [], [], []
+    for doc in completed:
+        analysis = doc.analysis
+        metadata = analysis.patient_info
+        if metadata.patient_name and "not specified" not in metadata.patient_name.lower() and metadata.patient_name not in patient_names:
+            patient_names.append(metadata.patient_name)
+        if metadata.attending_physician and "not specified" not in metadata.attending_physician.lower() and metadata.attending_physician not in clinicians:
+            clinicians.append(metadata.attending_physician)
+        facts = [fact.value for fact in (analysis.diagnoses or []) + (analysis.past_history or [])]
+        details = [analysis.summary]
+        if analysis.hospital_course:
+            details.append(f"Hospital course: {analysis.hospital_course}")
+        if facts:
+            details.append("Documented diagnoses / history: " + "; ".join(dict.fromkeys(facts)))
+        patient_added = [fact.value for fact in analysis.user_added_information]
+        if patient_added:
+            details.append("Patient/caregiver-entered during document review (not clinician findings): " + "; ".join(patient_added))
+        details.append(f"Hospital: {metadata.hospital_name}; discharge date: {metadata.discharge_date}; attending: {metadata.attending_physician}")
+        details.append(f"Admission: {metadata.admission_date}; reason: {metadata.admission_reason}")
+        details.append(f"Procedure / diagnosis: {metadata.procedure_or_diagnosis}")
+        for instruction in analysis.recovery_milestones:
+            details.append(f"Discharge instruction: {instruction}")
+        source = f"{doc.filename or doc.title} · {metadata.discharge_date} · Document ID {doc.id}"
+        history.append({"date": metadata.discharge_date, "heading": metadata.procedure_or_diagnosis or "Hospital discharge", "details": "\n".join(details), "source": source})
+        if analysis.allergies:
+            allergies.extend([[fact.value, fact.state, f"{doc.filename or doc.title} · {metadata.discharge_date}" + (f" · {', '.join(fact.source_references)}" if fact.source_references else "")] for fact in analysis.allergies])
+        elif analysis.allergy_status == "none_reported":
+            allergies.append(["No allergies reported in this document", "Source reports none", f"{doc.filename or doc.title} · {metadata.discharge_date}"])
+        else:
+            allergies.append(["Not recorded in this document", "Unknown; not evidence of no allergies", f"{doc.filename or doc.title} · {metadata.discharge_date}"])
+        for med in analysis.medication_instructions:
+            status_text = (med.continuation_status or "").strip()
+            low = status_text.lower()
+            if any(word in low for word in ("discontinued", "stop", "ceased")):
+                verification = "Discontinued per source" + (f" · {med.state}" if med.state != "stated" else "")
+            elif any(word in low for word in ("current", "continue", "ongoing", "active")):
+                verification = "Current per source" + (f" · {med.state}" if med.state != "stated" else "")
+            elif any(word in low for word in ("historical", "previous", "past medicine")):
+                verification = "Historical per source; verify whether still active" + (f" · {med.state}" if med.state != "stated" else "")
+            else:
+                verification = "Historical / continuation unclear; verify" + (f" · {med.state}" if med.state != "stated" else "")
+            instructions = "; ".join(part for part in [med.dosage, med.frequency, med.when_to_take,
+                med.route, med.duration, f"PRN: {med.frequency or 'frequency not recorded'}" if med.frequency_type == "as_needed" else None,
+                f"Maximum: {med.maximum_limit}" if med.maximum_limit else None] if part) or "Instructions not recorded"
+            incomplete = [field.replace("_", " ") for field in ("name", "dosage", "route", "frequency", "when_to_take", "duration")
+                          if not getattr(med, field) or med.field_states.get(field) != "stated"]
+            if med.conflicts or med.state in ("ambiguous", "conflicting") or incomplete:
+                verification += " · Verify" + (f"; incomplete: {', '.join(incomplete)}" if incomplete else "")
+                verification += (f"; conflict: {'; '.join(med.conflicts)}" if med.conflicts else "")
+            medicines.append([med.name or "Not recorded", instructions, verification,
+                              f"{doc.filename or doc.title} · {metadata.discharge_date}" + (f" · {', '.join(med.source_references)}" if med.source_references else "")])
+        for item in analysis.recovery_milestones:
+            care.append(f"{item} (source: {doc.filename or doc.title})")
+        for warning in analysis.source_warning_signs:
+            care.append(f"Warning sign from source: {warning.sign}" + (f" — Action: {warning.action}" if warning.action else "") + f" (source: {doc.filename or doc.title})")
+        for investigation in analysis.investigations:
+            investigations.append([investigation.name or "Investigation name not recorded", investigation.date or "Not recorded",
+                                   investigation.result or "Result not recorded",
+                                   f"{doc.filename or doc.title} · {metadata.discharge_date}" + (f" · {', '.join(investigation.source_references)}" if investigation.source_references else "")])
+    # Sort only dates that are explicitly parseable; do not guess ambiguous date formats.
+    def chronology_key(value: str):
+        for pattern in ("%Y-%m-%d", "%B %d, %Y", "%b %d, %Y", "%d %B %Y", "%d %b %Y"):
+            try:
+                return (0, datetime.strptime(value.strip(), pattern).date().isoformat())
+            except (ValueError, AttributeError):
+                pass
+        return (1, str(value or ""))
+    history.sort(key=lambda item: chronology_key(item["date"]))
+    medicine_groups = {}
+    for row in medicines:
+        medicine_groups.setdefault(re.sub(r"\s+", " ", row[0].casefold()).strip(), []).append(row)
+    for group in medicine_groups.values():
+        if len(group) > 1:
+            instructions_differ = len({row[1].casefold() for row in group}) > 1
+            warning = "Conflicting medication instructions across records; verify" if instructions_differ else "Listed in multiple records; verify whether duplicate or ongoing"
+            for row in group:
+                row[2] += " · " + warning
+    appointments = []
+    for task in tasks:
+        if task.type != "appointment":
+            if not task.completed:
+                care.append(f"Outstanding care task: {task.title}")
+            continue
+        source_doc = documents_by_id.get(task.document_id or "")
+        source = f"{source_doc.filename or source_doc.title} · {source_doc.analysis.patient_info.discharge_date}" if source_doc else "Source document unavailable"
+        if task.source_references:
+            source += " · " + ", ".join(task.source_references)
+        appointments.append([task.date_time or "Date not recorded", task.title,
+                             " · ".join(value for value in [task.provider, task.location] if value) or "Not recorded",
+                             source + (" · Completed" if task.completed else "")])
+    appointments.sort(key=lambda row: chronology_key(row[0]))
+    sources = [{"filename": doc.filename or doc.title, "title": doc.title, "uploaded_at": doc.uploaded_at, "status": doc.status} for doc in documents]
+    return {
+        "patient": {"Full name": "; ".join(patient_names) if patient_names else "Not recorded",
+                    "Age / date of birth": "; ".join(dict.fromkeys(doc.analysis.patient_info.age_or_date_of_birth for doc in completed if "not specified" not in doc.analysis.patient_info.age_or_date_of_birth.lower())) or "Not recorded",
+                    "Sex": "; ".join(dict.fromkeys(doc.analysis.patient_info.sex for doc in completed if "not specified" not in doc.analysis.patient_info.sex.lower())) or "Not recorded",
+                    "Contact": "Not recorded", "Patient ID": "; ".join(dict.fromkeys(doc.analysis.patient_info.record_number for doc in completed if "not specified" not in doc.analysis.patient_info.record_number.lower())) or "Not recorded",
+                    "Treating doctor / specialists": "; ".join(clinicians) if clinicians else "Not recorded"},
+        "history": history, "allergies": allergies, "medications": medicines, "appointments": appointments,
+        "care": list(dict.fromkeys(care)), "investigations": investigations, "sources": sources,
+        "notes": notes, "previous_consultation_notes": previous_consultation_notes,
+    }
+
+
+def _send_upload_appointment_email(user: User, document: DocumentRecord) -> None:
+    """Send a generic, idempotent upload confirmation after extracted data is saved."""
+    if (not settings.EMAIL_NOTIFICATIONS_ENABLED or not user.email_notifications_enabled or not user.email_verified
+            or not document.analysis):
+        return
+    recipient = parseaddr(user.email)[1]
+    if not recipient or recipient.lower() != user.email.strip().lower() or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", recipient):
+        logger.info("Skipping upload appointment email for account %s: invalid email", user.account_id)
+        return
+    try:
+        zone = ZoneInfo(user.timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        zone = timezone.utc
+    today = datetime.now(zone).date()
+    future = []
+    for task in user_store.get_tasks(user.id):
+        if task.document_id != document.id or task.type != "appointment" or task.completed or task.cancelled:
+            continue
+        date_value = task.date_sort_key
+        try:
+            appointment_date = datetime.strptime(date_value, "%Y-%m-%d").date() if date_value else None
+        except ValueError:
+            appointment_date = None
+        if appointment_date and appointment_date >= today:
+            future.append((appointment_date, task))
+    if not future:
+        return
+    _, appointment = min(future, key=lambda item: (item[0], item[1].appointment_time or ""))
+    claim = user_store.claim_upload_confirmation(user.account_id, document.id, appointment.id, recipient)
+    if not claim:
+        return
+    date_text = appointment.date_time or appointment.date_sort_key or "Date not specified"
+    time_text = appointment.appointment_time or appointment.time_of_day
+    provider_text = appointment.provider or "Not specified"
+    clinic_text = appointment.location or "Not specified"
+    text_body = ("Hello,\n\nYour discharge document has been successfully uploaded to DischargeBuddy.\n\n"
+                 "Your next scheduled follow-up appointment is:\n\n"
+                 f"Date: {date_text}\n" + (f"Time: {time_text}\n" if time_text else "") +
+                 f"Doctor / Department: {provider_text}\nHospital / Clinic: {clinic_text}\n\n"
+                 f"You can access your saved medical records and care plan through {settings.APP_BASE_URL}.\n\n"
+                 "Please review your appointment details and contact your healthcare provider if anything needs clarification.\n\nRegards,\nDischargeBuddy")
+    html_body = "<p>Hello,</p><p>Your discharge document has been successfully uploaded to DischargeBuddy.</p>" \
+        "<p>Your next scheduled follow-up appointment is:</p><ul>" \
+        f"<li>Date: {escape(date_text)}</li>" + (f"<li>Time: {escape(time_text)}</li>" if time_text else "") + \
+        f"<li>Doctor / Department: {escape(provider_text)}</li><li>Hospital / Clinic: {escape(clinic_text)}</li></ul>" \
+        f"<p>You can access your saved medical records and care plan through <a href=\"{escape(settings.APP_BASE_URL, quote=True)}\">DischargeBuddy</a>.</p>" \
+        "<p>Please review your appointment details and contact your healthcare provider if anything needs clarification.</p><p>Regards,<br>DischargeBuddy</p>"
+    try:
+        send_brevo_email(recipient, "Your next follow-up appointment — DischargeBuddy", html_body, text_body,
+                         idempotency_key=claim["id"])
+        user_store.finish_upload_confirmation(claim["id"], "sent")
+    except Exception as error:
+        logger.warning("Upload appointment email delivery failed for document %s: %s", document.id, error)
+        user_store.finish_upload_confirmation(claim["id"], "failed", str(error)[:500])
+
+
+@app.get("/api/user/medical-history")
+async def get_medical_history(consultation_id: str = "upcoming", user: User = Depends(require_current_user)):
+    return {"history": _medical_history_payload(user, consultation_id)}
+
+
+@app.put("/api/user/consultation-notes")
+async def save_consultation_notes(payload: ConsultationNotesRequest, user: User = Depends(require_current_user)):
+    consultation_id = payload.consultation_id.strip() or "upcoming"
+    notes = payload.model_dump(exclude={"consultation_id"})
+    notes["updated_at"] = datetime.now(timezone.utc).isoformat()
+    try:
+        saved = user_store.save_consultation_notes(user.id, consultation_id, notes)
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    return {"consultation_id": consultation_id, "notes": saved}
+
+
+@app.post("/api/user/medical-history/export")
+async def export_medical_history(payload: MedicalHistoryExportRequest, user: User = Depends(require_current_user)):
+    if not payload.reviewed:
+        raise HTTPException(status_code=400, detail="Review and confirm the selected medical information before exporting.")
+    allowed = {"patient", "history", "allergies", "medications", "followups", "care", "consultation", "investigations", "sources"}
+    sections = list(dict.fromkeys(section for section in payload.sections if section in allowed))
+    if not sections:
+        raise HTTPException(status_code=400, detail="Select at least one section to include.")
+    pdf = build_medical_history_pdf(_medical_history_payload(user, payload.consultation_id), sections)
+    export_id = user_store.record_medical_export(user.id, sections, payload.consultation_id, pdf)
+    headers = {"Content-Disposition": f'attachment; filename="DischargeBuddy-Medical-History-{export_id[-12:]}.pdf"',
+               "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
+    return StreamingResponse(BytesIO(pdf), media_type="application/pdf", headers=headers)
+
+
+@app.get("/api/user/medical-history/exports")
+async def list_medical_history_exports(user: User = Depends(require_current_user)):
+    return {"exports": user_store.get_medical_exports(user.id)}
+
+
+@app.get("/api/user/medical-history/exports/{export_id}")
+async def download_saved_medical_history_export(export_id: str, user: User = Depends(require_current_user)):
+    export = user_store.get_medical_export(user.id, export_id)
+    if not export:
+        raise HTTPException(status_code=404, detail="Medical history export not found in this account.")
+    if not export.get("pdf_data"):
+        raise HTTPException(status_code=410, detail="The saved PDF is unavailable. Generate a new export from the current records.")
+    return StreamingResponse(BytesIO(export["pdf_data"]), media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="DischargeBuddy-Medical-History-{export_id[-12:]}.pdf"',
+                 "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 # ========================================================
 # UPLOAD, EXTRACTION & REVIEW PIPELINE
@@ -554,6 +783,8 @@ async def _process_document_record(user: User, record: DocumentRecord, language:
         record.status, record.ai_status = "completed", "completed"
         record.error_detail = None
         saved = user_store.update_document(user.id, record)
+        if saved:
+            _send_upload_appointment_email(user, saved)
         return {"document_id": record.id, "processing_status": "completed", "analysis": analysis, "document": saved}
     review_id = user_store.add_pending_review(user.id, {
         "analysis": analysis.model_dump(), "raw_text": record.raw_text,
@@ -621,6 +852,7 @@ async def confirm_document_review(payload: ReviewConfirmRequest, user: User = De
     record = user_store.complete_pending_review(user.id, payload.review_id, analysis)
     if not record:
         raise HTTPException(status_code=404, detail="Document was removed or is no longer available.")
+    _send_upload_appointment_email(user, record)
     return {"document": record}
 
 @app.delete("/api/user/documents/review/{review_id}")

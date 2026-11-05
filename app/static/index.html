@@ -265,6 +265,9 @@
         <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="handover" onclick="openHandover('caregiver')">
           <span class="material-symbols-outlined text-lg">handshake</span><span>Visit &amp; Caregiver Handover</span>
         </button>
+        <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="medical-history" onclick="openMedicalHistory()">
+          <span class="material-symbols-outlined text-lg">clinical_notes</span><span>Export Medical History</span>
+        </button>
 
         <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" data-page="profile" onclick="navigateTo('profile')">
           <span class="material-symbols-outlined text-lg">person</span>
@@ -349,7 +352,7 @@
         <!-- ======================================================== -->
         <!-- VIEW 1: HOME / DASHBOARD                                 -->
         <!-- ======================================================== -->
-        <section id="view-dashboard" class="space-y-6">
+        <section id="view-dashboard" class="space-y-5">
           
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 class="text-2xl font-bold text-slate-900 tracking-tight" data-i18n="overview">Today's Recovery Overview</h2>
@@ -379,9 +382,15 @@
           <div id="dash-overview" class="hidden space-y-5">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <article class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
-                <div class="flex items-center justify-between"><h3 class="font-bold text-slate-900" data-i18n="medicines">My Medicines</h3><span id="dash-meds-count" class="text-xs text-primary font-bold"></span></div>
-                <div id="dash-medicines" class="mt-3 space-y-3"></div>
-                <button onclick="navigateTo('summary')" class="mt-4 text-xs font-bold text-primary hover:underline" data-i18n="med_schedule">View complete medication schedule →</button>
+                <p id="dash-meds-safety-summary" class="mb-2 hidden text-xs font-semibold text-amber-800" aria-live="polite"></p>
+                <details id="dash-medications-panel" class="group">
+                  <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
+                    <span class="flex items-center gap-2"><span class="material-symbols-outlined text-primary" aria-hidden="true">medication</span><span class="font-bold text-slate-900" data-i18n="medicines">Medications</span></span>
+                    <span class="flex items-center gap-2"><span id="dash-meds-count" class="text-xs text-primary font-bold"></span><span class="material-symbols-outlined text-slate-500 transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span></span>
+                  </summary>
+                  <div id="dash-medicines" class="mt-3 space-y-3"></div>
+                  <button onclick="navigateTo('summary')" class="mt-3 text-xs font-bold text-primary hover:underline" data-i18n="med_schedule">View complete medication schedule ?</button>
+                </details>
               </article>
               <article class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
                 <div class="flex items-center justify-between"><h3 class="font-bold text-slate-900" data-i18n="consultation">Next Consultation</h3><button onclick="navigateTo('care')" class="text-xs font-bold text-primary hover:underline" data-i18n="view_followup">View follow-up</button></div>
@@ -399,7 +408,7 @@
           </div>
 
           <!-- RETURNING USER DASHBOARD GRID (Fluid 2-Column Desktop Layout) -->
-          <div id="dash-active-content" class="block space-y-6">
+          <div id="dash-active-content" class="block space-y-5">
             
             <!-- LEFT MAIN COLUMN (2/3 Width) -->
             <div class="space-y-6">
@@ -859,6 +868,56 @@
           <div id="handover-history" class="rounded-xl border bg-white p-4"><h3 class="font-bold">Handover history</h3><div class="mt-2 space-y-2 text-sm text-slate-700"></div></div>
         </section>
 
+        <section id="view-medical-history" class="hidden space-y-5">
+          <div class="rounded-2xl border border-teal-200 bg-teal-50 p-5">
+            <h2 class="text-2xl font-bold text-slate-900">Prepare for a New Consultation</h2>
+            <p class="mt-2 max-w-3xl text-sm text-slate-700">Review the source-backed history from your saved discharge records. Select the sections you want to share, edit your consultation notes, then confirm before downloading a private PDF.</p>
+          </div>
+          <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
+            <div class="space-y-4">
+              <section class="rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 class="font-bold">Notes for the Upcoming Consultation</h3>
+                <p id="medical-notes-updated" class="mt-1 text-xs text-slate-500">User-entered notes are saved to this account and marked separately from clinician records.</p>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label class="text-sm font-semibold">Reason for consultation<textarea data-med-note="reason" class="mt-1 min-h-20 w-full rounded-lg border p-3"></textarea></label>
+                  <label class="text-sm font-semibold">Main concerns / recent changes<textarea data-med-note="concerns" class="mt-1 min-h-20 w-full rounded-lg border p-3"></textarea></label>
+                  <label class="text-sm font-semibold">Caregiver observations<textarea data-med-note="observations" placeholder="Symptoms, mobility, feeding, breathing, sleep, pain, comfort or medication difficulties" class="mt-1 min-h-24 w-full rounded-lg border p-3"></textarea></label>
+                  <label class="text-sm font-semibold">Questions for the doctor<textarea data-med-note="questions" class="mt-1 min-h-24 w-full rounded-lg border p-3"></textarea></label>
+                  <label class="text-sm font-semibold">Pending investigations<textarea data-med-note="pending_investigations" class="mt-1 min-h-20 w-full rounded-lg border p-3"></textarea></label>
+                  <label class="text-sm font-semibold">Medication-related questions<textarea data-med-note="medication_questions" class="mt-1 min-h-20 w-full rounded-lg border p-3"></textarea></label>
+                  <label class="text-sm font-semibold sm:col-span-2">Additional notes<textarea data-med-note="additional_notes" class="mt-1 min-h-20 w-full rounded-lg border p-3"></textarea></label>
+                </div>
+                <button onclick="saveMedicalHistoryNotes()" class="mt-3 min-h-11 rounded-lg border border-primary px-4 font-semibold text-primary">Save consultation notes</button>
+              </section>
+              <section class="rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 class="font-bold">Choose what to include</h3>
+                <p class="mt-1 text-xs text-slate-600">All sections are shown in the preview. Clear any section you do not want to share.</p>
+                <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="patient" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Patient information</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="history" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Medical history timeline</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="allergies" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Allergies and reactions</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="medications" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Medication list</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="followups" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Follow-ups and notes</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="care" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Care requirements</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="consultation" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Upcoming consultation notes</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="investigations" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Investigations</label>
+                  <label class="flex min-h-10 items-center gap-2 text-sm"><input data-med-section="sources" type="checkbox" checked class="h-4 w-4 accent-teal-700"> Source documents</label>
+                </div>
+                <label class="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950"><input id="medical-history-reviewed" type="checkbox" class="mt-1 h-4 w-4 accent-teal-700"><span>I reviewed the preview and approve sharing the selected health information in this PDF.</span></label>
+                <button onclick="downloadMedicalHistory()" class="mt-3 min-h-11 w-full rounded-lg bg-primary px-5 font-bold text-white">Export Medical History PDF</button>
+              </section>
+            </div>
+            <aside class="rounded-2xl border border-slate-200 bg-white p-5">
+              <h3 class="font-bold">Preview of saved medical history</h3>
+              <div id="medical-history-preview" class="mt-3 max-h-[75vh] space-y-4 overflow-y-auto text-sm text-slate-700" aria-live="polite"><p>Loading your saved records?</p></div>
+            </aside>
+          </div>
+          <section class="rounded-2xl border border-slate-200 bg-white p-5">
+            <h3 class="font-bold">Previously generated exports</h3>
+            <div id="medical-export-history" class="mt-3 space-y-2 text-sm text-slate-700"><p>No exports yet.</p></div>
+          </section>
+        </section>
+
         <section id="view-profile" class="hidden space-y-6">
           <div>
             <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Account &amp; Preferences</h2>
@@ -901,13 +960,13 @@
 
               <fieldset class="space-y-2 rounded-xl border border-slate-200 p-3">
                 <legend class="px-1 text-xs font-bold text-slate-800">Follow-up email reminders</legend>
-                <label class="flex min-h-11 items-center gap-2 text-xs text-slate-700"><input id="pref-email-reminders" type="checkbox" class="h-4 w-4 accent-teal-700"> Send appointment reminders three days before</label>
+                <label class="flex min-h-11 items-center gap-2 text-xs text-slate-700"><input id="pref-email-reminders" type="checkbox" class="h-4 w-4 accent-teal-700"> Email appointment details after processing and reminders three days before</label>
                 <label class="block text-xs font-semibold text-slate-700">Account timezone
                   <input id="pref-timezone" value="Asia/Kolkata" placeholder="Asia/Kolkata" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs">
                 </label>
                 <p id="email-verification-status" class="text-xs text-slate-600" aria-live="polite"></p>
                 <button type="button" onclick="requestEmailVerification()" id="verify-email-button" class="min-h-10 rounded-lg border px-3 text-xs font-semibold">Verify account email</button>
-                <p class="text-[11px] text-slate-500">Reminders are sent only after you enable them and verify your email address.</p>
+                <p class="text-[11px] text-slate-500">Upload appointment details and three-day reminders are sent only after you enable notifications and verify your email address.</p>
                 <div id="reminder-delivery-history" class="space-y-1 text-[11px] text-slate-600" aria-live="polite"></div>
               </fieldset>
 
@@ -942,27 +1001,31 @@
     <!-- MOBILE FIXED BOTTOM NAVIGATION BAR (< 1024px) -->
     <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 pb-safe shadow-lg">
       <div class="flex justify-around items-center h-16 max-w-lg mx-auto px-2">
-        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-primary font-bold" data-page="dashboard" onclick="navigateTo('dashboard')">
+        <button class="mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-primary font-bold" data-page="dashboard" onclick="navigateTo('dashboard')">
           <span class="material-symbols-outlined text-2xl">dashboard</span>
           <span class="text-[10px]">Home</span>
         </button>
 
-        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="documents" onclick="navigateTo('documents')">
+        <button class="mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="documents" onclick="navigateTo('documents')">
           <span class="material-symbols-outlined text-2xl">folder_open</span>
           <span class="text-[10px]">Documents</span>
         </button>
 
-        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="care" onclick="navigateTo('care')">
+        <button class="mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="care" onclick="navigateTo('care')">
           <span class="material-symbols-outlined text-2xl">check_circle</span>
           <span class="text-[10px]">My Care</span>
         </button>
 
-        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="handover" onclick="openHandover('caregiver')">
+        <button class="mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="handover" onclick="openHandover('caregiver')">
           <span class="material-symbols-outlined text-2xl">handshake</span>
           <span class="text-[10px]">Handover</span>
         </button>
+        <button class="mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="medical-history" onclick="openMedicalHistory()">
+          <span class="material-symbols-outlined text-2xl">clinical_notes</span>
+          <span class="text-[10px]">Medical History</span>
+        </button>
 
-        <button class="mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="profile" onclick="navigateTo('profile')">
+        <button class="mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-slate-500 hover:text-slate-900 font-medium" data-page="profile" onclick="navigateTo('profile')">
           <span class="material-symbols-outlined text-2xl">person</span>
           <span class="text-[10px]">Profile</span>
         </button>
@@ -1077,6 +1140,7 @@
       documents: [],
       medicines: [],
       reminderDeliveries: [],
+      uploadConfirmationDeliveries: [],
       tasks: [],
       painEntries: [],
       handoverEvents: [],
@@ -1085,6 +1149,9 @@
       pendingReviewId: null,
       pendingReviewAnalysis: null,
       handoverKind: 'visit',
+      consultationId: 'upcoming',
+      medicalHistory: null,
+      medicationPanelUserId: null,
       pendingDeleteDocId: null,
       intake: {
         mode: 'pdf',
@@ -1104,7 +1171,7 @@
     function resetAccountDataIfSwitched(nextUserId) {
       if (state.user?.id && state.user.id !== nextUserId) {
         state.documents = []; state.tasks = []; state.medicines = []; state.painEntries = []; state.handoverEvents = [];
-        state.reminderDeliveries = [];
+        state.reminderDeliveries = []; state.uploadConfirmationDeliveries = [];
         state.currentDocumentAnalysis = null; state.pendingReviewId = null; state.pendingReviewAnalysis = null;
         renderDashboard(); renderDocumentsView(); renderCareTasks(); renderPainTracker();
       }
@@ -1400,7 +1467,7 @@
       state.documents = [];
       state.tasks = [];
       state.medicines = [];
-      state.reminderDeliveries = [];
+      state.reminderDeliveries = []; state.uploadConfirmationDeliveries = [];
       state.painEntries = [];
       state.handoverEvents = [];
       state.currentDocumentAnalysis = null;
@@ -1543,13 +1610,13 @@
         document.getElementById('care-tasks-list').innerHTML = '<p class="text-xs text-slate-500 py-3">Loading saved care tasks…</p>';
       }
       try {
-        const endpoints = ['/api/user/documents', '/api/user/tasks', '/api/user/tracker/pain', '/api/user/handover/history', '/api/user/medicines', '/api/auth/me', '/api/user/reminders'];
+        const endpoints = ['/api/user/documents', '/api/user/tasks', '/api/user/tracker/pain', '/api/user/handover/history', '/api/user/medicines', '/api/auth/me', '/api/user/reminders', '/api/user/upload-confirmations'];
         const responses = await Promise.all(endpoints.map(url => authenticatedFetch(url)));
         const failed = responses.find(response => !response.ok);
         if (failed) throw new Error(failed.status === 401 ? 'Your session expired. Sign in again.' : `Account data request failed (${failed.status}).`);
-        const [docsData, tasksData, painData, handoverData, medicineData, profileData, reminderData] = await Promise.all(responses.map(response => response.json()));
+        const [docsData, tasksData, painData, handoverData, medicineData, profileData, reminderData, uploadConfirmationData] = await Promise.all(responses.map(response => response.json()));
         if (state.user?.id !== userId || requestId !== userDataRequestId) return;
-        if (!Array.isArray(docsData.documents) || !Array.isArray(tasksData.tasks) || !Array.isArray(painData.entries) || !Array.isArray(handoverData.events) || !Array.isArray(medicineData.medicines) || !Array.isArray(reminderData.deliveries) || profileData.user?.id !== userId) {
+        if (!Array.isArray(docsData.documents) || !Array.isArray(tasksData.tasks) || !Array.isArray(painData.entries) || !Array.isArray(handoverData.events) || !Array.isArray(medicineData.medicines) || !Array.isArray(reminderData.deliveries) || !Array.isArray(uploadConfirmationData.deliveries) || profileData.user?.id !== userId) {
           throw new Error('The server returned an incomplete account-data response.');
         }
         state.documents = docsData.documents;
@@ -1558,6 +1625,7 @@
         state.handoverEvents = handoverData.events;
         state.medicines = medicineData.medicines;
         state.reminderDeliveries = reminderData.deliveries;
+        state.uploadConfirmationDeliveries = uploadConfirmationData.deliveries;
         state.user = profileData.user;
         document.getElementById('email-verification-status').textContent = state.user.email_verified ? `Verified: ${state.user.email}` : `Not verified: ${state.user.email}`;
         document.getElementById('verify-email-button').classList.toggle('hidden', !!state.user.email_verified);
@@ -1583,7 +1651,7 @@
     // ----------------------------------------------------
     function navigateTo(page) {
       state.currentPage = page;
-      const pages = ['dashboard', 'documents', 'summary', 'care', 'handover', 'profile'];
+      const pages = ['dashboard', 'documents', 'summary', 'care', 'handover', 'medical-history', 'profile'];
       
       pages.forEach(p => {
         const el = document.getElementById(`view-${p}`);
@@ -1606,9 +1674,9 @@
       // Update mobile nav buttons
       document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
         if (btn.getAttribute('data-page') === page) {
-          btn.className = 'mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-primary font-bold';
+          btn.className = 'mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-primary font-bold';
         } else {
-          btn.className = 'mobile-nav-btn flex flex-col items-center justify-center w-16 h-full text-slate-500 hover:text-slate-900 font-medium';
+          btn.className = 'mobile-nav-btn flex flex-col items-center justify-center flex-1 min-w-0 h-full text-slate-500 hover:text-slate-900 font-medium';
         }
       });
 
@@ -1627,6 +1695,127 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
       if (state.token && state.user) loadUserData();
     }
+
+    async function openMedicalHistory() {
+      const todayKey = localTodayKey();
+      const candidates = (state.tasks || []).filter(task => task.type === 'appointment' && !task.completed && !task.cancelled && task.date_sort_key && task.date_sort_key >= todayKey)
+        .sort((a, b) => a.date_sort_key.localeCompare(b.date_sort_key));
+      state.consultationId = candidates[0]?.id || 'upcoming';
+      navigateTo('medical-history');
+      document.getElementById('medical-history-preview').innerHTML = '<p>Loading your saved records?</p>';
+      try {
+        const response = await authenticatedFetch(`/api/user/medical-history?consultation_id=${encodeURIComponent(state.consultationId)}`);
+        if (!response.ok) throw new Error('Could not load your saved medical history.');
+        const data = await response.json();
+        state.medicalHistory = data.history;
+        document.getElementById('medical-history-reviewed').checked = false;
+        const notes = state.medicalHistory.notes || {};
+        document.querySelectorAll('[data-med-note]').forEach(input => { input.value = notes[input.dataset.medNote] || ''; });
+        document.getElementById('medical-notes-updated').textContent = notes.updated_at
+          ? `User-entered notes · Last saved ${new Date(notes.updated_at).toLocaleString()}. Clinician findings remain identified by their source documents.`
+          : 'User-entered notes are saved to this account and marked separately from clinician records.';
+        renderMedicalHistoryPreview();
+        await loadMedicalHistoryExports();
+      } catch (error) {
+        document.getElementById('medical-history-preview').textContent = error.message || 'Could not load saved medical records.';
+      }
+    }
+
+    function renderMedicalHistoryPreview() {
+      const data = state.medicalHistory;
+      const panel = document.getElementById('medical-history-preview');
+      if (!data) return;
+      const selected = new Set([...document.querySelectorAll('[data-med-section]:checked')].map(input => input.dataset.medSection));
+      const block = (key, title, body) => selected.has(key) ? `<section><h4 class="font-bold text-slate-900">${title}</h4><div class="mt-1 space-y-2">${body || '<p>Not recorded</p>'}</div></section>` : '';
+      const p = (value) => `<p class="whitespace-pre-wrap break-words">${escapeHtml(value || 'Not recorded')}</p>`;
+      const patient = Object.entries(data.patient || {}).map(([key, value]) => `<p><strong>${escapeHtml(key)}:</strong> ${escapeHtml(value || 'Not recorded')}</p>`).join('');
+      const history = (data.history || []).map(item => `<article class="rounded-lg border p-3"><h5 class="font-semibold">${escapeHtml(item.heading)} · ${escapeHtml(item.date)}</h5>${p(item.details)}<p class="mt-1 text-xs text-slate-500">Source: ${escapeHtml(item.source)}</p></article>`).join('');
+      const allergies = (data.allergies || []).map(row => `<article class="rounded-lg border p-3"><p class="font-semibold">${escapeHtml(row[0])}</p><p>${escapeHtml(row[1])}</p><p class="text-xs text-slate-500">Source: ${escapeHtml(row[2])}</p></article>`).join('');
+      const medicines = (data.medications || []).map(row => `<article class="rounded-lg border p-3"><p class="font-semibold">${escapeHtml(row[0])}</p><p>${escapeHtml(row[1])}</p><p class="text-amber-800">${escapeHtml(row[2])}</p><p class="text-xs text-slate-500">Source: ${escapeHtml(row[3])}</p></article>`).join('');
+      const appointments = (data.appointments || []).map(row => `<article class="rounded-lg border p-3"><p class="font-semibold">${escapeHtml(row[0])} · ${escapeHtml(row[1])}</p><p>${escapeHtml(row[2])}</p><p class="text-xs text-slate-500">Source: ${escapeHtml(row[3])}</p></article>`).join('');
+      const previousNotes = (data.previous_consultation_notes || []).map(note => `<article class="rounded-lg border border-sky-200 bg-sky-50 p-3"><p class="text-xs font-semibold">Patient/caregiver-entered ? ${escapeHtml(note.created_at || 'Date not recorded')}</p>${p(note.notes)}</article>`).join('');
+      const care = (data.care || []).map(p).join('');
+      const notes = { ...(data.notes || {}) };
+      document.querySelectorAll('[data-med-note]').forEach(input => { notes[input.dataset.medNote] = input.value.trim(); });
+      const consultation = ['reason','concerns','observations','questions','pending_investigations','medication_questions','additional_notes']
+        .map(key => notes[key] ? `<p><strong>${escapeHtml(key.replaceAll('_', ' '))} (user-entered):</strong> ${escapeHtml(notes[key])}</p>` : '').join('');
+      const investigations = (data.investigations || []).map(row => `<article class="rounded-lg border p-3"><p class="font-semibold">${escapeHtml(row[0])} · ${escapeHtml(row[1])}</p><p>${escapeHtml(row[2])}</p><p class="text-xs text-slate-500">Source: ${escapeHtml(row[3])}</p></article>`).join('') || '<p>No investigation results were extracted; refer to original documents.</p>';
+      const sources = (data.sources || []).map(doc => `<p>${escapeHtml(doc.filename || doc.title)} · ${escapeHtml(doc.uploaded_at)} · ${escapeHtml(doc.status)}</p>`).join('');
+      panel.innerHTML = [block('patient','Patient information',patient), block('history','Medical history timeline',history), block('allergies','Allergies and reactions',allergies),
+        block('medications','Medication list',medicines), block('followups','Follow-ups and consultation notes',appointments + previousNotes + consultation),
+        block('care','Care requirements',care), block('consultation','Notes for upcoming consultation',consultation),
+        block('investigations','Investigations',investigations), block('sources','Source documents',sources)].filter(Boolean).join('') || '<p>Select a section to preview it.</p>';
+    }
+
+    async function loadMedicalHistoryExports() {
+      const container = document.getElementById('medical-export-history');
+      try {
+        const response = await authenticatedFetch('/api/user/medical-history/exports');
+        if (!response.ok) throw new Error('Could not load previous exports.');
+        const data = await response.json(); container.replaceChildren();
+        if (!data.exports?.length) { container.textContent = 'No exports yet.'; return; }
+        data.exports.forEach(item => {
+          const row = document.createElement('div'); row.className = 'flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3';
+          const summary = document.createElement('p');
+          summary.textContent = `${new Date(item.generated_at).toLocaleString()} · ${item.sections.join(', ')}`;
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'min-h-10 rounded-lg border border-primary px-3 font-semibold text-primary';
+          button.textContent = 'Download PDF'; button.addEventListener('click', () => downloadSavedMedicalExport(item.id));
+          row.append(summary, button); container.appendChild(row);
+        });
+      } catch (error) { container.textContent = error.message || 'Could not load previous exports.'; }
+    }
+
+    async function downloadSavedMedicalExport(exportId) {
+      try {
+        const response = await authenticatedFetch(`/api/user/medical-history/exports/${encodeURIComponent(exportId)}`);
+        if (!response.ok) throw new Error('Saved export is unavailable.');
+        const url = URL.createObjectURL(await response.blob());
+        const link = document.createElement('a'); link.href = url; link.download = 'DischargeBuddy-Medical-History.pdf';
+        document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+      } catch (error) { showToast(error.message || 'Could not download saved PDF.'); }
+    }
+
+    async function saveMedicalHistoryNotes() {
+      const body = { consultation_id: state.consultationId };
+      document.querySelectorAll('[data-med-note]').forEach(input => { body[input.dataset.medNote] = input.value.trim(); });
+      try {
+        const response = await authenticatedFetch('/api/user/consultation-notes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.detail || 'Could not save consultation notes.');
+        if (state.medicalHistory) state.medicalHistory.notes = result.notes;
+        document.getElementById('medical-notes-updated').textContent = `User-entered notes · Last saved ${new Date(result.notes.updated_at).toLocaleString()}. Clinician findings remain identified by their source documents.`;
+        renderMedicalHistoryPreview();
+        showToast('Consultation notes saved.');
+        return true;
+      } catch (error) { showToast(error.message || 'Could not save consultation notes.'); return false; }
+    }
+
+    async function downloadMedicalHistory() {
+      if (!document.getElementById('medical-history-reviewed').checked) {
+        showToast('Review the preview and approve the selected sections before exporting.'); return;
+      }
+      if (!await saveMedicalHistoryNotes()) return;
+      const sections = [...document.querySelectorAll('[data-med-section]:checked')].map(input => input.dataset.medSection);
+      if (!sections.length) { showToast('Select at least one section to include.'); return; }
+      try {
+        const response = await authenticatedFetch('/api/user/medical-history/export', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sections, reviewed: true, consultation_id: state.consultationId }) });
+        if (!response.ok) { const data = await response.json(); throw new Error(data.detail || 'PDF export failed.'); }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.href = url; link.download = 'DischargeBuddy-Medical-History.pdf';
+        document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        await loadMedicalHistoryExports();
+        showToast('Medical history PDF downloaded securely.');
+      } catch (error) { showToast(error.message || 'Could not generate the medical history PDF.'); }
+    }
+
+    document.addEventListener('change', event => {
+      if (event.target.matches('[data-med-section]')) { document.getElementById('medical-history-reviewed').checked = false; renderMedicalHistoryPreview(); }
+    });
+    document.addEventListener('input', event => {
+      if (event.target.matches('[data-med-note]')) { document.getElementById('medical-history-reviewed').checked = false; renderMedicalHistoryPreview(); }
+    });
 
     // ----------------------------------------------------
     // Dashboard Rendering (Handles Empty vs Returning)
@@ -1650,6 +1839,8 @@
     function mergeInstructionText(value) {
       return uniqueInstructionLines([value]).join(' ');
     }
+
+    function localTodayKey() { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; }
 
     function extractExplicitTime(value) {
       if (!value) return null;
@@ -1677,7 +1868,14 @@
 
       const analysis = state.documents.find(doc => doc.analysis)?.analysis || state.currentDocumentAnalysis;
       const meds = state.medicines || [];
-      document.getElementById('dash-meds-count').textContent = `${meds.length} prescribed`;
+      const medicationPanel = document.getElementById('dash-medications-panel');
+      if (state.user?.id && state.medicationPanelUserId !== state.user.id) { medicationPanel.open = false; state.medicationPanelUserId = state.user.id; }
+      document.getElementById('dash-meds-count').textContent = `${meds.length} listed · continuation status not assumed`;
+      const safetySummary = document.getElementById('dash-meds-safety-summary');
+      const safetyItems = meds.filter(med => med.maximum_limit || med.tips_or_warnings)
+        .map(med => `${med.name || 'Medicine'}: ${[med.maximum_limit ? `Maximum: ${med.maximum_limit}` : '', med.tips_or_warnings || ''].filter(Boolean).join(' · ')}`);
+      safetySummary.classList.toggle('hidden', !safetyItems.length);
+      safetySummary.textContent = safetyItems.length ? `Safety information: ${safetyItems.slice(0, 2).join(' | ')}${safetyItems.length > 2 ? ` · and ${safetyItems.length - 2} more in the medication schedule` : ''}` : '';
       const medsBox = document.getElementById('dash-medicines');
       medsBox.replaceChildren();
       if (!analysis) {
@@ -1695,7 +1893,7 @@
           const conflicts = [...(med.conflicts || []), ...Object.entries(med.field_states || {})
             .filter(([, value]) => value === 'conflicting').map(([key]) => `${key}: Conflicting information found. Please confirm with the treating clinician.`)];
           const ambiguous = Object.entries(med.field_states || {}).filter(([, value]) => value === 'ambiguous').map(([key]) => `${key}: unclear`);
-          const needsConfirmation = missingFields.length > 0 || states.includes('ambiguous') || states.includes('conflicting') || med.continuation_status === 'unclear' || conflicts.length > 0;
+          const needsConfirmation = missingFields.length > 0 || states.includes('ambiguous') || states.includes('conflicting') || !med.continuation_status || /unclear|unknown/i.test(med.continuation_status) || conflicts.length > 0;
           const typeLabels = { scheduled: 'Scheduled', as_needed: 'Only when needed', event_based: 'After an event', unspecified: 'Type not specified' };
           const instructions = uniqueInstructionLines([med.patient_explanation, med.purpose]);
           item.innerHTML = `
@@ -1715,6 +1913,7 @@
                   <p><span aria-hidden="true">▣</span> <strong>How long:</strong> ${escapeHtml(mergeInstructionText(med.duration) || missing)}</p>
                 </div>
                 ${instructions.length ? `<ul class="mt-3 list-disc space-y-1 pl-5 text-base text-slate-800">${instructions.map(text => `<li>${escapeHtml(text)}</li>`).join('')}</ul>` : `<p class="mt-3 text-base text-slate-800">${escapeHtml(med.name || missing)}</p>`}
+                <p class="mt-2 text-sm font-semibold text-slate-700"><strong>Continuation status:</strong> ${escapeHtml(med.continuation_status || 'Not documented; continuation unclear')}</p>
                 ${med.maximum_limit || med.tips_or_warnings ? `<div class="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-base text-amber-950"><p class="font-bold"><span aria-hidden="true">⚠</span> Important safety</p>${med.maximum_limit ? `<p class="mt-1"><strong>Maximum limit:</strong> ${escapeHtml(mergeInstructionText(med.maximum_limit))}</p>` : ''}${med.tips_or_warnings ? `<p class="mt-1">${escapeHtml(mergeInstructionText(med.tips_or_warnings))}</p>` : ''}</div>` : ''}
                 ${med.duplicate_count > 1 ? '<p class="mt-2 text-sm text-slate-700">Listed more than once in the discharge papers; counted once.</p>' : ''}
         <p class="mt-2 text-sm text-slate-600">From: ${escapeHtml(med.document_filename || 'Discharge document')}</p>
@@ -1729,7 +1928,8 @@
         });
       }
 
-      const appointments = state.tasks.filter(t => (t.type === 'appointment' || !t.type) && !t.completed)
+      const todayKey = localTodayKey();
+      const appointments = state.tasks.filter(t => (t.type === 'appointment' || !t.type) && !t.completed && !t.cancelled && (!t.date_sort_key || t.date_sort_key >= todayKey))
         .sort((a, b) => {
           if (a.date_sort_key && b.date_sort_key) return a.date_sort_key.localeCompare(b.date_sort_key);
           if (a.date_sort_key) return -1;
@@ -2579,11 +2779,15 @@
     function renderReminderDeliveries() {
       const container = document.getElementById('reminder-delivery-history');
       container.replaceChildren();
-      if (!state.reminderDeliveries?.length) return;
-      const heading = document.createElement('p'); heading.className = 'font-semibold'; heading.textContent = 'Recent reminder delivery status'; container.appendChild(heading);
-      state.reminderDeliveries.slice(0, 5).forEach(delivery => {
+      const entries = [
+        ...(state.uploadConfirmationDeliveries || []).map(delivery => ({ date: delivery.created_at, label: 'Upload appointment email', status: delivery.delivery_status })),
+        ...(state.reminderDeliveries || []).map(delivery => ({ date: delivery.scheduled_send_date, label: 'Three-day appointment reminder', status: delivery.delivery_status }))
+      ].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 5);
+      if (!entries.length) return;
+      const heading = document.createElement('p'); heading.className = 'font-semibold'; heading.textContent = 'Recent email delivery status'; container.appendChild(heading);
+      entries.forEach(delivery => {
         const line = document.createElement('p');
-        line.textContent = `${delivery.scheduled_send_date}: ${delivery.delivery_status}${delivery.error_details ? ` — ${delivery.error_details}` : ''}`;
+        line.textContent = `${delivery.date}: ${delivery.label} - ${delivery.status}`;
         container.appendChild(line);
       });
     }
