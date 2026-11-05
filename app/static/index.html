@@ -361,6 +361,7 @@
               <span>Demo account</span>
             </div>
           </div>
+          <p id="dash-greeting" class="-mt-4 text-sm text-slate-600" aria-live="polite"></p>
 
           <!-- EMPTY STATE FOR NEW USER WITH NO DOCUMENTS -->
           <div id="dash-empty-state" class="hidden bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-12 text-center shadow-xs">
@@ -1351,6 +1352,7 @@
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
@@ -1380,6 +1382,7 @@
       try {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password, preferred_language })
         });
@@ -1395,7 +1398,7 @@
 
     async function handleDemoLogin() {
       try {
-        const res = await fetch('/api/auth/demo', { method: 'POST' });
+        const res = await fetch('/api/auth/demo', { method: 'POST', credentials: 'same-origin' });
         const data = await res.json();
         if (!res.ok) throw new Error('Demo initialization failed.');
 
@@ -1425,12 +1428,26 @@
       document.getElementById('session-restoring').classList.add('flex');
       document.getElementById('session-retry-button').classList.add('hidden');
       document.getElementById('session-restore-message').textContent = 'Restoring your session…';
+      let res;
+      let networkError = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          res = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: state.token && state.token !== 'cookie-session' ? { 'Authorization': `Bearer ${state.token}` } : {}
+          });
+          networkError = false;
+          if (res.status < 500 || attempt === 2) break;
+        } catch {
+          networkError = true;
+          res = null;
+          if (attempt === 2) break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+      }
       try {
-        const res = await fetch('/api/auth/refresh', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: state.token && state.token !== 'cookie-session' ? { 'Authorization': `Bearer ${state.token}` } : {}
-        });
+        if (!res || networkError) throw new Error('network');
         if (res.ok) {
           const data = await res.json();
           resetAccountDataIfSwitched(data.user.id);
@@ -1447,17 +1464,19 @@
           clearLocalSession();
           renderAuthView();
         } else {
-          showRestoreRetry();
+          showRestoreRetry(`DischargeBuddy returned an error (${res.status}). Your session is saved; try again shortly.`);
         }
       } catch {
-        showRestoreRetry();
+        showRestoreRetry(networkError
+          ? 'Could not reach DischargeBuddy. Your session is saved; check your connection and try again.'
+          : 'Could not restore your session. Your session is saved; try again shortly.');
       }
     }
 
-    function showRestoreRetry() {
+    function showRestoreRetry(message) {
       document.getElementById('session-restoring').classList.remove('hidden');
       document.getElementById('session-restoring').classList.add('flex');
-      document.getElementById('session-restore-message').textContent = 'Could not reach DischargeBuddy. Your session is saved; check your connection and try again.';
+      document.getElementById('session-restore-message').textContent = message || 'Could not reach DischargeBuddy. Your session is saved; check your connection and try again.';
       document.getElementById('session-retry-button').classList.remove('hidden');
     }
 
